@@ -495,12 +495,36 @@ class RoadChaser:
         self.state = "intro"
         self.intro_t = 220
 
+    def safe_x(self, d, prefer):
+        """หาตำแหน่ง x ที่ปลอดภัยสำหรับเกิดใหม่ ตรวจถนนล่วงหน้าเป็นช่วง ไม่ใช่แค่จุดเดียว
+        (กันกรณีเกิดตรงปลายเกาะกลางที่กำลังงอกออกมา แล้วระเบิดซ้ำวนไม่จบ)"""
+        hw = PW / 2 + 6
+        rows = [self.road_edges(d + dy) for dy in range(-40, 201, 10)]
+        best, best_score = None, None
+        x = FIELD_L
+        while x <= FIELD_R:
+            clear = 1e9
+            for l, r, ml, mr in rows:
+                clear = min(clear, x - hw - l, r - hw - x)
+                if mr - ml > 1:
+                    clear = min(clear, max(ml - hw - x, x - hw - mr))
+            if clear >= 0:
+                score = min(clear, 40) * 4 - abs(x - prefer)   # ห่างขอบพอ แล้วเลือกที่ใกล้ตำแหน่งเดิม
+                if best_score is None or score > best_score:
+                    best, best_score = x, score
+            x += 2
+        return best
+
     def respawn(self):
-        l, r, ml, mr = self.road_edges(self.d)
-        if mr - ml > 4:
-            self.px = (l + ml) / 2 if self.px < (ml + mr) / 2 else (mr + r) / 2
-        else:
-            self.px = (l + r) / 2
+        for _ in range(40):
+            x = self.safe_x(self.d, self.px)
+            if x is not None:
+                break
+            self.d += 40      # ไม่มีที่ปลอดภัยเลย -> ขยับไปข้างหน้าเล็กน้อย
+        if x is None:
+            l, r, _, _ = self.road_edges(self.d)
+            x = (l + r) / 2
+        self.px = x
         self.v = 0.0
         self.skid = 0.0
         self.angle = 0.0
@@ -544,9 +568,8 @@ class RoadChaser:
                 self.state = "ending"
                 self.end_rank = self.record_score()
         elif s == "over" and ok:
-            self.score = 0.0               # CONTINUE: เล่นด่านเดิมต่อ คะแนนและจำนวนชนเริ่มใหม่
-            self.lives = MAX_CRASHES
-            self.start_stage(self.stage)
+            self.sel_stage = 0             # Game Over แล้วเริ่มใหม่ตั้งแต่ STAGE 1
+            self.new_game()
         elif s == "ending" and ok:
             self.to_title()
 
@@ -1513,7 +1536,7 @@ class RoadChaser:
             c.create_text(FIELD_CX, 365, text=f"ติดอันดับที่ {self.over_rank}!", fill="#69f0ae",
                           font=(FONT_TH, 14, "bold"))
         if (self.frame // 20) % 2 == 0:
-            c.create_text(FIELD_CX, 430, text="กด Enter เพื่อ CONTINUE ด่านนี้", fill="#69f0ae",
+            c.create_text(FIELD_CX, 430, text="กด Enter เพื่อเริ่มใหม่ที่ STAGE 1", fill="#69f0ae",
                           font=(FONT_TH, 14, "bold"))
         c.create_text(FIELD_CX, 460, text=f"(คะแนนเริ่มใหม่ ชนได้ {MAX_CRASHES} ครั้ง)   Esc = หน้าแรก", fill="#bdbdbd",
                       font=(FONT_TH, 11))
