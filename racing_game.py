@@ -8,7 +8,8 @@
     ↓ / S               : เบรก
     Shift / Space       : ไนโตร (ระหว่างแข่ง)
     P                   : หยุดชั่วคราว
-    C                   : เปลี่ยนรถ (หน้าจบเกม)
+    H / F1              : เมนูช่วยเหลือ ดูปุ่มควบคุม (ระหว่างแข่ง)
+    C                 : เปลี่ยนรถ (หน้าจบเกม)
     Esc                 : ออกจากเกม
 
 หลบรถคันอื่น เก็บเหรียญ $ ถังไนโตร N และโล่ S
@@ -55,6 +56,16 @@ CARS = [
 STAT_LABELS = [("top", "ความเร็วสูงสุด"), ("accel", "อัตราเร่ง"),
                ("handle", "การควบคุม"), ("nitro", "ไนโตร")]
 
+# ปุ่มควบคุม (ใช้ทั้งหน้านับถอยหลังและเมนูช่วยเหลือ)
+CONTROLS = [
+    ("←  →  /  A  D", "เลี้ยว"),
+    ("↑  /  W", "เร่งความเร็ว"),
+    ("↓  /  S", "เบรก"),
+    ("Shift  /  Space", "ไนโตร"),
+    ("P", "หยุดชั่วคราว"),
+    ("H  /  F1", "เมนูช่วยเหลือ"),
+]
+
 ENEMY_TYPES = [
     {"style": "sedan", "w": 46, "h": 86, "weight": 8},
     {"style": "truck", "w": 50, "h": 130, "weight": 2},
@@ -93,7 +104,8 @@ class RacingGame:
         self.sel = self.save["car"]
         self.car = CARS[self.sel]
         self.frame = 0
-        self.state = "select"   # select, count, play, pause, crash, over
+        self.state = "select"   # select, count, play, pause, help, crash, over
+        self.help_from = "play"  # สถานะที่จะกลับไปหลังปิดเมนูช่วยเหลือ
         self.reset()
         self.loop()
 
@@ -199,6 +211,13 @@ class RacingGame:
                 self.start_race()
             elif k == "c":
                 self.state = "select"
+        elif k in ("h", "f1"):
+            # เปิด/ปิดเมนูช่วยเหลือ (เกมหยุดระหว่างเปิด)
+            if self.state in ("play", "pause"):
+                self.help_from = self.state
+                self.state = "help"
+            elif self.state == "help":
+                self.state = self.help_from
         elif k == "p":
             if self.state == "play":
                 self.state = "pause"
@@ -499,7 +518,7 @@ class RacingGame:
 
         # รถผู้เล่น
         car = self.car
-        if self.state in ("count", "play", "pause"):
+        if self.state in ("count", "play", "pause", "help"):
             if self.boosting:
                 self.draw_flame(self.px, self.py + car["h"] / 2)
             if self.invuln == 0 or (self.frame // 4) % 2 == 0:
@@ -528,6 +547,10 @@ class RacingGame:
             self.draw_countdown()
         elif self.state == "pause":
             self.overlay("หยุดชั่วคราว", "กด P เพื่อเล่นต่อ  |  Esc ออกจากเกม")
+            c.create_text(W / 2, H / 2 + 52, text="กด H เพื่อดูปุ่มควบคุม",
+                          fill="#ffd54f", font=(FONT, 13))
+        elif self.state == "help":
+            self.draw_help()
         elif self.state == "over":
             self.draw_game_over()
         elif self.state == "play" and self.go_t > 0:
@@ -710,6 +733,9 @@ class RacingGame:
             c.create_rectangle(x0, fill_top, x1, y1, fill="#40c4ff", outline="")
             c.create_text((x0 + x1) / 2, y0 - 14, text="โล่", fill="#ffffff", font=(FONT, 9, "bold"))
 
+        if self.state == "play":
+            c.create_text(W / 2, H - 12, text="H = ช่วยเหลือ", fill="#cccccc", font=(FONT, 9, "bold"))
+
     def dim(self):
         self.cv.create_rectangle(0, 0, W, H, fill="#000000", stipple="gray50", outline="")
 
@@ -795,19 +821,43 @@ class RacingGame:
         size = 70 + (self.count_t % 60)
         c.create_text(W / 2 + 4, 224, text=str(n), fill="#000", font=(FONT, size, "bold"))
         c.create_text(W / 2, 220, text=str(n), fill="#ffd54f", font=(FONT, size, "bold"))
-        lines = [
-            ("←  →  /  A  D", "เลี้ยว"),
-            ("↑  /  W", "เร่งความเร็ว"),
-            ("↓  /  S", "เบรก"),
-            ("Shift  /  Space", "ไนโตร"),
-            ("P", "หยุดชั่วคราว"),
-        ]
-        for i, (k, desc) in enumerate(lines):
-            yy = 360 + i * 32
+        for i, (k, desc) in enumerate(CONTROLS):
+            yy = 345 + i * 30
             c.create_text(W / 2 - 15, yy, anchor="e", text=k, fill="#ffffff", font=(FONT, 13, "bold"))
             c.create_text(W / 2 + 15, yy, anchor="w", text=desc, fill="#dddddd", font=(FONT, 13))
         c.create_text(W / 2, 545, text="$ = +50   N = ไนโตร   S = โล่กันชน   แซงเฉียด = +25",
                       fill="#ffeb3b", font=(FONT, 11))
+
+    def draw_help(self):
+        # เมนูช่วยเหลือ: ปุ่มควบคุม + ไอเท็ม (เกมหยุดอยู่)
+        c = self.cv
+        self.dim()
+        x0, y0, x1, y1 = 50, 110, W - 50, 610
+        c.create_rectangle(x0, y0, x1, y1, fill="#15181d", outline="#ffd54f", width=3)
+        c.create_text(W / 2, y0 + 36, text="ช่วยเหลือ", fill="#ffd54f", font=(FONT, 26, "bold"))
+        c.create_text(W / 2, y0 + 78, text="ปุ่มควบคุม", fill="#69f0ae", font=(FONT, 14, "bold"))
+        for i, (k, desc) in enumerate(CONTROLS):
+            yy = y0 + 112 + i * 30
+            nitro = desc == "ไนโตร"
+            c.create_text(W / 2 - 15, yy, anchor="e", text=k,
+                          fill="#ff7043" if nitro else "#ffffff", font=(FONT, 13, "bold"))
+            c.create_text(W / 2 + 15, yy, anchor="w", text=desc,
+                          fill="#ff7043" if nitro else "#dddddd", font=(FONT, 13))
+
+        c.create_text(W / 2, y0 + 310, text="ไอเท็ม", fill="#69f0ae", font=(FONT, 14, "bold"))
+        items = [
+            ("coin", "เหรียญ +50 คะแนน เติมไนโตรนิดหน่อย"),
+            ("nitro", "ถังไนโตร เติมหลอด N2O (ซ้ายจอ)"),
+            ("shield", "โล่ ชนรถได้ 1 ครั้งไม่พัง"),
+        ]
+        for i, (kind, desc) in enumerate(items):
+            yy = y0 + 348 + i * 38
+            self.draw_pickup(x0 + 50, yy, kind)
+            c.create_text(x0 + 80, yy, anchor="w", text=desc, fill="#dddddd", font=(FONT, 12))
+
+        if (self.frame // 20) % 2 == 0:
+            c.create_text(W / 2, y1 - 24, text="กด H อีกครั้งเพื่อกลับไปเล่น",
+                          fill="#69f0ae", font=(FONT, 13, "bold"))
 
     def draw_game_over(self):
         c = self.cv
