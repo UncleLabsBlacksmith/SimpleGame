@@ -20,6 +20,7 @@ import math
 import os
 import random
 import tkinter as tk
+import webbrowser
 
 # ---------------- ค่าคงที่ ----------------
 W, H = 480, 720
@@ -31,6 +32,9 @@ FONT = "Tahoma"
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 SAVE_FILE = os.path.join(BASE_DIR, "racing_save.json")
 OLD_HS_FILE = os.path.join(BASE_DIR, "racing_highscore.txt")
+
+DEVELOPER = "Uncle Engineer"
+PROJECT_URL = "https://github.com/UncleLabsBlacksmith/SimpleGame"
 
 NITRO_MAX = 100
 SHIELD_FRAMES = 480
@@ -80,6 +84,9 @@ class RacingGame:
         root.bind("<KeyRelease>", self.on_release)
         root.bind("<FocusOut>", self.on_focus_out)
         self.cv.bind("<Button-1>", self.on_click)
+        self.cv.bind("<Motion>", self.on_motion)
+        self.credit_box = None   # ตำแหน่งปุ่มผู้พัฒนา (อัปเดตทุกเฟรม)
+        self.credit_hover = False
 
         self.save = self.load_save()
         self.best = self.save["best"]
@@ -207,7 +214,18 @@ class RacingGame:
         if self.state == "play":
             self.state = "pause"
 
+    def in_credit(self, x, y):
+        b = self.credit_box
+        return b is not None and b[0] <= x <= b[2] and b[1] <= y <= b[3]
+
+    def on_motion(self, e):
+        self.credit_hover = self.in_credit(e.x, e.y)
+        self.cv.config(cursor="hand2" if self.credit_hover else "")
+
     def on_click(self, e):
+        if self.in_credit(e.x, e.y):
+            webbrowser.open(PROJECT_URL)
+            return
         if self.state != "select":
             return
         slot = W / len(CARS)
@@ -228,6 +246,9 @@ class RacingGame:
         self.frame += 1
         self.update()
         self.draw()
+        if self.credit_box is None and self.credit_hover:   # ปุ่มหายไปจากจอแล้ว
+            self.credit_hover = False
+            self.cv.config(cursor="")
         self.root.after(FRAME_MS, self.loop)
 
     def update(self):
@@ -469,6 +490,7 @@ class RacingGame:
     def draw(self):
         c = self.cv
         c.delete("all")
+        self.credit_box = None
         self.draw_world()
 
         if self.state == "select":
@@ -705,7 +727,7 @@ class RacingGame:
 
         c.create_text(W / 2 + 3, 43, text="เกมรถแข่ง", fill="#000", font=(FONT, 30, "bold"))
         c.create_text(W / 2, 40, text="เกมรถแข่ง", fill="#ff5252", font=(FONT, 30, "bold"))
-        c.create_text(W / 2, 82, text="เลือกรถของคุณ", fill="#ffd54f", font=(FONT, 16, "bold"))
+        c.create_text(W / 2, 82, text="เลือกรถของคุณ  ( ← → )", fill="#ffd54f", font=(FONT, 16, "bold"))
 
         # พรีวิวรถ
         x0, y0, x1, y1 = PREVIEW_BOX
@@ -748,10 +770,23 @@ class RacingGame:
             self.draw_car(cx, THUMB_Y, cr, scale=0.65)
 
         if blink:
-            c.create_text(W / 2, 688, text="กด SPACE เพื่อเริ่มแข่ง",
-                          fill="#69f0ae", font=(FONT, 17, "bold"))
-        c.create_text(W / 2, 711, text="← → เลือกรถ   |   คลิกที่รถเพื่อเลือก / คลิกพรีวิวเพื่อเริ่ม",
-                      fill="#cfd8dc", font=(FONT, 10))
+            c.create_text(W / 2, 684, text="กด SPACE เพื่อเริ่มแข่ง",
+                          fill="#69f0ae", font=(FONT, 16, "bold"))
+        self.draw_credit_button(W / 2, 706)
+
+    def draw_credit_button(self, cx, cy):
+        # ปุ่มเครดิตผู้พัฒนา คลิกแล้วเปิดหน้า GitHub ของโปรเจกต์
+        c = self.cv
+        hover = self.credit_hover
+        text = f"พัฒนาโดย {DEVELOPER}  |  GitHub ↗"
+        item = c.create_text(cx, cy, text=text, font=(FONT, 10, "bold"),
+                             fill="#15181d" if hover else "#ffd54f")
+        x0, y0, x1, y1 = c.bbox(item)
+        box = (x0 - 12, y0 - 3, x1 + 12, y1 + 3)
+        rect = c.create_rectangle(*box, fill="#ffd54f" if hover else "#263238",
+                                  outline="#ffd54f", width=2)
+        c.tag_lower(rect, item)
+        self.credit_box = box
 
     def draw_countdown(self):
         c = self.cv
@@ -793,6 +828,7 @@ class RacingGame:
             c.create_text(W / 2, 520, text="กด SPACE เพื่อเล่นใหม่", fill="#69f0ae",
                           font=(FONT, 18, "bold"))
         c.create_text(W / 2, 560, text="กด C เพื่อเปลี่ยนรถ", fill="#ffffff", font=(FONT, 14))
+        self.draw_credit_button(W / 2, 660)
 
 
 def main():
