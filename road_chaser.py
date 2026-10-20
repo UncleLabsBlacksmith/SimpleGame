@@ -46,6 +46,7 @@ FRAME_MS = 16
 FUEL_MAX = 100
 FUEL_BURN = FUEL_MAX / (62 * 60)   # น้ำมันเต็มถังวิ่งได้ ~62 วินาที
 FUEL_CAR_BONUS = 20
+MAX_CRASHES = 5               # ชนระเบิดได้กี่ครั้งต่อเกม ครบแล้ว Game Over
 STAR_FRAMES = 420
 
 FONT_TH = "Tahoma"
@@ -276,6 +277,8 @@ class RoadChaser:
         self.menu_idx = 0
         self.frame = 0
         self.score = 0.0
+        self.lives = MAX_CRASHES
+        self.over_reason = ""
         self.state = "title"   # title, howto, scores, intro, play, pause, goal, over, ending
         self.setup_stage(self.sel_stage)
         self.loop()
@@ -484,6 +487,7 @@ class RoadChaser:
     # ---------------- เริ่มเกม ----------------
     def new_game(self):
         self.score = 0.0
+        self.lives = MAX_CRASHES
         self.start_stage(self.sel_stage)
 
     def start_stage(self, i):
@@ -540,7 +544,8 @@ class RoadChaser:
                 self.state = "ending"
                 self.end_rank = self.record_score()
         elif s == "over" and ok:
-            self.score = 0.0               # CONTINUE: เล่นด่านเดิมต่อ คะแนนเริ่มใหม่
+            self.score = 0.0               # CONTINUE: เล่นด่านเดิมต่อ คะแนนและจำนวนชนเริ่มใหม่
+            self.lives = MAX_CRASHES
             self.start_stage(self.stage)
         elif s == "ending" and ok:
             self.to_title()
@@ -644,6 +649,9 @@ class RoadChaser:
         if self.crash_t > 0:
             self.crash_t -= 1
             if self.crash_t == 0:
+                if self.lives <= 0:
+                    self.game_over("crash")
+                    return
                 if self.fuel <= 0:
                     self.game_over()
                     return
@@ -728,8 +736,13 @@ class RoadChaser:
         self.skid = 0.0
         self.shake = 16
         self.crashes += 1
+        self.lives = max(0, self.lives - 1)
         self.explode(self.px, self.d, 0.0, 55)
         self.sound.play("crash")
+        if self.lives > 0:
+            self.popup(self.px, self.d + 50, f"เหลือ {self.lives} ครั้ง", "#ff8a80")
+        else:
+            self.popup(self.px, self.d + 50, "ชนครบแล้ว!", "#ff5252")
 
     def explode(self, x, wy, vwy, n):
         for _ in range(n):
@@ -972,8 +985,9 @@ class RoadChaser:
                 self.fuel = 0.0
                 self.tally_done = True
 
-    def game_over(self):
+    def game_over(self, reason="fuel"):
         self.state = "over"
+        self.over_reason = reason
         self.over_rank = self.record_score()
 
     # ---------------- วาด ----------------
@@ -1316,10 +1330,24 @@ class RoadChaser:
         c.create_text(W - 14, 512, anchor="e", text=self.fmt_time(self.time), fill="#ffffff",
                       font=(FONT_NUM, 15, "bold"))
 
+        # จำนวนครั้งที่ยังชนได้ (รถสีแดง = เหลือ, สีเทา = ใช้ไปแล้ว)
+        c.create_text(x0 + 16, 538, anchor="w", text="CRASH", fill="#9e9e9e", font=(FONT_NUM, 10, "bold"))
+        c.create_text(W - 14, 538, anchor="e", text=f"{self.lives}/{MAX_CRASHES}",
+                      fill="#ff5252" if self.lives <= 1 else "#ffffff", font=(FONT_NUM, 10, "bold"))
+        for i in range(MAX_CRASHES):
+            ix = x0 + 25 + i * 23
+            alive = i < self.lives
+            c.create_rectangle(ix - 7, 552, ix + 7, 572, fill="#e53935" if alive else "#2a2a2a",
+                               outline="#ffffff" if alive else "#424242")
+            c.create_rectangle(ix - 5, 556, ix + 5, 561, fill="#9fd3ff" if alive else "#333333", outline="")
+            if not alive:
+                c.create_line(ix - 7, 552, ix + 7, 572, fill="#ff5252", width=2)
+                c.create_line(ix + 7, 552, ix - 7, 572, fill="#ff5252", width=2)
+
         hints = ["←→  เลี้ยว", "↑ / Z  เกียร์ต่ำ", "Shift / X  เกียร์สูง", "↓ / C  เบรก",
                  "P พัก   M เสียง"]
         for i, h in enumerate(hints):
-            c.create_text(x0 + 14, 580 + i * 22, anchor="w", text=h, fill="#757575", font=(FONT_TH, 9))
+            c.create_text(x0 + 14, 592 + i * 20, anchor="w", text=h, fill="#757575", font=(FONT_TH, 9))
         c.create_text(cx, 700, text="เสียง: " + ("เปิด" if self.sound.enabled else "ปิด"),
                       fill="#616161", font=(FONT_TH, 9))
 
@@ -1385,7 +1413,7 @@ class RoadChaser:
         self.shadow_text(FIELD_CX, 40, "วิธีเล่น", "#ffd54f", (FONT_TH, 22, "bold"))
         lines = [
             "ขับให้ถึงเส้นชัย (GOAL) ก่อนน้ำมันหมด",
-            "ชนขอบถนน / เกาะกลาง / รถบรรทุก / หิน = ระเบิด",
+            f"ชนขอบถนน / เกาะกลาง / รถบรรทุก / หิน = ระเบิด (ได้ {MAX_CRASHES} ครั้ง)",
             "ชนรถเก๋ง = รถหมุน กดเลี้ยวสวนทางเพื่อตั้งหลัก",
             "↑/Z เกียร์ต่ำ (200)  +  Shift/X เกียร์สูง (400 km/h)",
             "เทคนิค: ออกตัวด้วยเกียร์ต่ำ แล้วค่อยกดเกียร์สูง",
@@ -1478,7 +1506,8 @@ class RoadChaser:
         c = self.cv
         self.dim()
         self.shadow_text(FIELD_CX, 230, "GAME OVER", "#ff5252", (FONT_TITLE, 50))
-        c.create_text(FIELD_CX, 290, text="น้ำมันหมด!", fill="#ffffff", font=(FONT_TH, 16, "bold"))
+        reason = f"ชนครบ {MAX_CRASHES} ครั้ง!" if self.over_reason == "crash" else "น้ำมันหมด!"
+        c.create_text(FIELD_CX, 290, text=reason, fill="#ffffff", font=(FONT_TH, 16, "bold"))
         c.create_text(FIELD_CX, 330, text=f"คะแนน {int(self.score):07d}", fill="#ffd54f", font=(FONT_NUM, 18, "bold"))
         if self.over_rank:
             c.create_text(FIELD_CX, 365, text=f"ติดอันดับที่ {self.over_rank}!", fill="#69f0ae",
@@ -1486,7 +1515,7 @@ class RoadChaser:
         if (self.frame // 20) % 2 == 0:
             c.create_text(FIELD_CX, 430, text="กด Enter เพื่อ CONTINUE ด่านนี้", fill="#69f0ae",
                           font=(FONT_TH, 14, "bold"))
-        c.create_text(FIELD_CX, 460, text="(คะแนนจะเริ่มนับใหม่)   Esc = หน้าแรก", fill="#bdbdbd",
+        c.create_text(FIELD_CX, 460, text=f"(คะแนนเริ่มใหม่ ชนได้ {MAX_CRASHES} ครั้ง)   Esc = หน้าแรก", fill="#bdbdbd",
                       font=(FONT_TH, 11))
 
     def draw_ending(self):
