@@ -1,0 +1,17 @@
+# ไฟล์บันทึกคะแนนของเกม (ข้อมูลส่วนตัวของผู้เล่นแต่ละเครื่อง)
+racing_save.json
+racing_highscore.txt
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
