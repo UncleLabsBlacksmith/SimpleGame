@@ -1,6 +1,7 @@
 # ไฟล์บันทึกคะแนนของเกม (ข้อมูลส่วนตัวของผู้เล่นแต่ละเครื่อง)
 racing_save.json
 racing_highscore.txt
+road_chaser_save.json
 
 # Python
 __pycache__/
