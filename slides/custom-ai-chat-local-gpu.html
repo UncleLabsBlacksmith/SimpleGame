@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Custom (Local) AI Chat (GPU)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bai+Jamjuree:wght@500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: fixed 1280x720 stage scaled to the window; one slide visible at a time */
+:root {
+  --bg: #ecebe8;
+  --paper: #f8f7f5;
+  --ink: #1d1a17;
+  --muted: #6b645d;
+  --line: #d9d4ce;
+  --accent: #c2501b;
+  --accent-soft: #f5ddd0;
+  --cool: #1f7891;
+  --cool-soft: #d6e9ee;
+  --code-bg: #1a1714;
+  --code-fg: #ebe5de;
+  --code-k: #f5a26b;
+  --code-s: #9fd3e0;
+  --code-c: #8b8178;
+  --display: "Bai Jamjuree", "IBM Plex Sans Thai", system-ui, sans-serif;
+  --body: "IBM Plex Sans Thai", "Leelawadee UI", "Tahoma", system-ui, sans-serif;
+  --mono: "JetBrains Mono", "Cascadia Code", Consolas, monospace;
+  --scale: 1;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0e0d0c; --paper: #171513; --ink: #ece7e1; --muted: #a0978e; --line: #2e2a26;
+  --accent: #f0823f; --accent-soft: #3a2316; --cool: #6cc0d6; --cool-soft: #14303a;
+  --code-bg: #0a0908; color-scheme: dark;
+} }
+:root[data-theme="dark"] {
+  --bg: #0e0d0c; --paper: #171513; --ink: #ece7e1; --muted: #a0978e; --line: #2e2a26;
+  --accent: #f0823f; --accent-soft: #3a2316; --cool: #6cc0d6; --cool-soft: #14303a;
+  --code-bg: #0a0908; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body { background: var(--bg); color: var(--ink); font-family: var(--body); overflow: hidden; }
+
+.stage {
+  position: fixed; left: 50%; top: 50%; width: 1280px; height: 720px;
+  transform: translate(-50%, -50%) scale(var(--scale));
+  background: var(--paper); box-shadow: 0 20px 60px rgb(0 0 0 / .14);
+}
+.slide {
+  position: absolute; inset: 0; padding: 60px 80px 72px;
+  display: flex; flex-direction: column; gap: 28px;
+  opacity: 0; visibility: hidden; transition: opacity .35s ease;
+}
+.slide.on { opacity: 1; visibility: visible; }
+@media (prefers-reduced-motion: reduce) { .slide { transition: none; } }
+
+.eyebrow { font: 600 15px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--accent); }
+h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; }
+h1 { font-size: 86px; line-height: 1.02; font-weight: 700; letter-spacing: -.01em; }
+h2 { font-size: 46px; line-height: 1.15; font-weight: 700; }
+h3 { font-size: 26px; font-weight: 600; }
+p { margin: 0; }
+.lead { font-size: 26px; line-height: 1.6; color: var(--muted); max-width: 32em; }
+.foot {
+  position: absolute; left: 80px; right: 80px; bottom: 28px;
+  display: flex; justify-content: space-between; font: 400 14px var(--mono); color: var(--muted);
+  border-top: 1px solid var(--line); padding-top: 12px;
+}
+.cols { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; flex: 1; min-height: 0; }
+.cols.wide-left { grid-template-columns: 1.5fr 1fr; }
+.cols > * { min-width: 0; }
+ul.list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 16px; font-size: 23px; line-height: 1.5; }
+ul.list li { padding-left: 30px; position: relative; }
+ul.list li::before { content: ""; position: absolute; left: 0; top: .62em; width: 12px; height: 12px; border-radius: 3px; background: var(--accent); }
+ul.list.cool li::before { background: var(--cool); }
+.panel { background: var(--bg); border: 1px solid var(--line); border-radius: 14px; padding: 28px 30px; display: flex; flex-direction: column; gap: 18px; }
+.panel h3 { font-size: 24px; }
+.tag { display: inline-block; font: 600 13px var(--mono); letter-spacing: .08em; text-transform: uppercase; padding: 6px 10px; border-radius: 6px; background: var(--accent-soft); color: var(--accent); width: fit-content; }
+.tag.cool { background: var(--cool-soft); color: var(--cool); }
+
+pre.code {
+  margin: 0; background: var(--code-bg); color: var(--code-fg); border-radius: 12px;
+  padding: 22px 24px; font: 400 16px/1.5 var(--mono); overflow: auto; white-space: pre;
+}
+pre.code.sm { font-size: 13px; padding: 18px 20px; }
+.k { color: var(--code-k); } .s { color: var(--code-s); } .c { color: var(--code-c); font-style: italic; }
+code.inline { font: 500 .88em var(--mono); background: var(--accent-soft); color: var(--accent); padding: 2px 7px; border-radius: 5px; }
+
+.notes { display: flex; flex-direction: column; gap: 18px; }
+.note { display: grid; grid-template-columns: 150px 1fr; gap: 14px; font-size: 21px; line-height: 1.5; align-items: baseline; }
+.note b { font: 600 17px var(--mono); color: var(--accent); }
+
+.callout { border-radius: 12px; padding: 18px 22px; font-size: 21px; line-height: 1.5; background: var(--cool-soft); color: var(--ink); border: 1px solid color-mix(in srgb, var(--cool) 40%, transparent); }
+.callout strong { color: var(--cool); }
+
+/* title slide */
+.title-slide { justify-content: center; gap: 30px; }
+.title-slide .chips { display: flex; gap: 12px; flex-wrap: wrap; }
+.chip { font: 500 17px var(--mono); padding: 10px 16px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); }
+.chipglyph { position: absolute; right: 70px; top: 64px; width: 300px; height: 300px; }
+
+/* tables */
+table.t { border-collapse: collapse; width: 100%; font-size: 20px; }
+table.t th { text-align: left; font: 600 14px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding: 0 16px 12px; border-bottom: 1.5px solid var(--ink); }
+table.t td { padding: 10px 16px; border-bottom: 1px solid var(--line); vertical-align: top; line-height: 1.4; }
+table.t td.num { font: 600 19px var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+table.t td.hot { color: var(--accent); }
+table.t td b { font-family: var(--display); font-size: 22px; }
+.formula { font: 500 22px var(--mono); background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 16px 22px; }
+.formula em { font-style: normal; color: var(--accent); }
+.small { font-size: 17px; color: var(--muted); }
+
+/* quant bars */
+.qrows { display: flex; flex-direction: column; gap: 16px; }
+.qrow { display: grid; grid-template-columns: 140px 1fr 330px; gap: 22px; align-items: center; }
+.qrow .name { font: 600 21px var(--mono); }
+.qrow .track { height: 30px; background: var(--bg); border-radius: 6px; overflow: hidden; border: 1px solid var(--line); }
+.qrow .fill { height: 100%; background: var(--muted); display: flex; align-items: center; justify-content: flex-end; padding-right: 10px; font: 600 14px var(--mono); color: var(--paper); }
+.qrow.pick .fill { background: var(--accent); }
+.qrow.pick .name { color: var(--accent); }
+.qrow .what { font-size: 19px; line-height: 1.4; color: var(--muted); }
+
+/* flow (vertical chain) */
+.flow { display: flex; flex-direction: column; }
+.node { background: var(--bg); border: 1.5px solid var(--line); border-radius: 10px; padding: 6px 16px; display: flex; justify-content: space-between; align-items: baseline; }
+.node.hot { border-color: var(--accent); background: var(--accent-soft); }
+.node .who { font: 600 13px var(--mono); color: var(--muted); }
+.node h3 { font-size: 19px; }
+.arrow { height: 22px; display: grid; place-items: center; }
+.arrow svg { width: 12px; height: 100%; }
+
+.grid6 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.card { background: var(--bg); border: 1px solid var(--line); border-radius: 14px; padding: 22px 24px; display: flex; flex-direction: column; gap: 10px; }
+.card h3 { font-size: 22px; }
+.card p { font-size: 18px; line-height: 1.55; color: var(--muted); }
+a.next { color: var(--accent); font-weight: 600; }
+
+/* controls */
+.ctrl {
+  position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  display: flex; align-items: center; gap: 8px; font: 500 13px var(--mono); color: var(--muted); z-index: 5;
+}
+.ctrl button { font: inherit; border: 1px solid var(--line); background: var(--paper); color: var(--ink); border-radius: 8px; width: 36px; height: 36px; cursor: pointer; }
+.ctrl button:hover { border-color: var(--accent); color: var(--accent); }
+.ctrl button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.progress { position: fixed; left: 0; top: 0; height: 4px; background: var(--accent); transition: width .3s ease; z-index: 5; }
+</style>
+</head>
+<body>
+<div class="progress" id="bar"></div>
+<main class="stage" id="stage">
+
+<!-- 1 -->
+<section class="slide title-slide">
+  <svg class="chipglyph" viewBox="0 0 300 300" aria-hidden="true">
+    <g stroke="var(--accent)" stroke-width="10" stroke-linecap="round">
+      <path d="M110 40v34M150 40v34M190 40v34M110 226v34M150 226v34M190 226v34M40 110h34M40 150h34M40 190h34M226 110h34M226 150h34M226 190h34"/>
+    </g>
+    <rect x="74" y="74" width="152" height="152" rx="18" fill="none" stroke="var(--accent)" stroke-width="12"/>
+    <rect x="112" y="112" width="76" height="76" rx="8" fill="var(--accent)"/>
+  </svg>
+  <div class="eyebrow">Workshop · ตอนที่ 2 จาก 2</div>
+  <h1>Custom (Local)<br>AI Chat <span style="color:var(--accent)">(GPU)</span></h1>
+  <p class="lead">รันโมเดลภาษาบนการ์ดจอของตัวเอง ไม่ต้องใช้ API Key ไม่มีค่าใช้จ่ายต่อข้อความ และข้อมูลไม่ออกนอกเครื่อง</p>
+  <div class="chips">
+    <span class="chip">Ollama · llama.cpp</span>
+    <span class="chip">NVIDIA · AMD · Apple Silicon</span>
+    <span class="chip">ใช้ได้แบบ offline</span>
+  </div>
+</section>
+
+<!-- 2 -->
+<section class="slide">
+  <div class="eyebrow">ภาพรวม</div>
+  <h2>ทำไมต้องรันโมเดลเอง</h2>
+  <div class="cols">
+    <div class="panel">
+      <span class="tag">ได้อะไร</span>
+      <ul class="list">
+        <li>ข้อความทั้งหมดอยู่ในเครื่อง เหมาะกับข้อมูลลับหรือข้อมูลลูกค้า</li>
+        <li>ไม่มีค่า token แชทได้ไม่จำกัด</li>
+        <li>ใช้งานได้แม้ไม่มีอินเทอร์เน็ต</li>
+        <li>เลือกโมเดล open-weight ได้หลายตัว และ fine-tune เองได้</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <span class="tag cool">ต้องแลกกับอะไร</span>
+      <ul class="list cool">
+        <li>ต้องมีการ์ดจอที่ VRAM พอสำหรับโมเดล</li>
+        <li>โมเดลที่รันบนเครื่องได้มักเล็กและเก่งน้อยกว่ารุ่นท็อปบนคลาวด์</li>
+        <li>ต้องอัปเดตโมเดลและเครื่องมือเอง</li>
+        <li>มีค่าไฟ ความร้อน และเสียงพัดลม</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 3 -->
+<section class="slide">
+  <div class="eyebrow">ฮาร์ดแวร์</div>
+  <h2>VRAM คือตัวกำหนดว่ารันโมเดลไหนได้</h2>
+  <div class="formula">VRAM ≈ <em>จำนวนพารามิเตอร์</em> × <em>ไบต์ต่อพารามิเตอร์</em> + 1–2 GB สำหรับ context</div>
+  <table class="t">
+    <thead><tr><th>ขนาดโมเดล</th><th>FP16 (เต็ม)</th><th>Q4 (บีบอัด)</th><th>การ์ดที่พอรัน Q4 ได้</th></tr></thead>
+    <tbody>
+      <tr><td><b>3–4B</b></td><td class="num">~8 GB</td><td class="num hot">~3 GB</td><td>โน้ตบุ๊ก GPU 4–6 GB</td></tr>
+      <tr><td><b>7–8B</b></td><td class="num">~16 GB</td><td class="num hot">~5–6 GB</td><td>RTX 3060 / 4060 (8 GB)</td></tr>
+      <tr><td><b>12–14B</b></td><td class="num">~28 GB</td><td class="num hot">~9–10 GB</td><td>RTX 3060 12 GB / 4070</td></tr>
+      <tr><td><b>32B</b></td><td class="num">~64 GB</td><td class="num hot">~20 GB</td><td>RTX 3090 / 4090 (24 GB)</td></tr>
+      <tr><td><b>70B</b></td><td class="num">~140 GB</td><td class="num hot">~40 GB+</td><td>2 × 24 GB หรือ Mac ที่มี RAM 64 GB ขึ้นไป</td></tr>
+    </tbody>
+  </table>
+  <p class="small">ตัวเลขเป็นค่าประมาณ จะเพิ่มขึ้นตามความยาว context ที่ตั้งไว้ · B = พันล้านพารามิเตอร์</p>
+</section>
+
+<!-- 4 -->
+<section class="slide">
+  <div class="eyebrow">ฮาร์ดแวร์</div>
+  <h2>Quantization: บีบโมเดลให้เล็กลง</h2>
+  <p class="lead" style="font-size:22px">ลดความละเอียดของตัวเลขในโมเดลจาก 16 บิต เหลือ 8, 5 หรือ 4 บิต โมเดลเล็กลงและเร็วขึ้น โดยเสียคุณภาพไม่มาก ไฟล์ที่ใช้กันทั่วไปเป็นฟอร์แมต GGUF</p>
+  <div class="qrows">
+    <div class="qrow"><span class="name">FP16</span><div class="track"><div class="fill" style="width:100%">2.0 B/param</div></div><span class="what">คุณภาพเต็ม ใช้ VRAM มากที่สุด</span></div>
+    <div class="qrow"><span class="name">Q8_0</span><div class="track"><div class="fill" style="width:53%">1.06</div></div><span class="what">แทบไม่ต่างจากต้นฉบับ</span></div>
+    <div class="qrow"><span class="name">Q5_K_M</span><div class="track"><div class="fill" style="width:36%">0.71</div></div><span class="what">สมดุลดี ถ้า VRAM เหลือ</span></div>
+    <div class="qrow pick"><span class="name">Q4_K_M</span><div class="track"><div class="fill" style="width:30%">0.60</div></div><span class="what">จุดคุ้มที่สุด แนะนำให้เริ่มที่นี่</span></div>
+    <div class="qrow"><span class="name">Q2_K</span><div class="track"><div class="fill" style="width:21%">0.41</div></div><span class="what">เล็กมาก แต่คุณภาพตกชัดเจน</span></div>
+  </div>
+</section>
+
+<!-- 5 -->
+<section class="slide">
+  <div class="eyebrow">เครื่องมือ</div>
+  <h2>เลือกโปรแกรมรันโมเดล</h2>
+  <table class="t">
+    <thead><tr><th>เครื่องมือ</th><th>จุดเด่น</th><th>เหมาะกับ</th></tr></thead>
+    <tbody>
+      <tr><td><b>Ollama</b></td><td>ติดตั้งง่าย ดาวน์โหลดโมเดลด้วยคำสั่งเดียว มี API ในตัว</td><td>เริ่มต้น และใช้ทำแชทบอทในสไลด์นี้</td></tr>
+      <tr><td><b>LM Studio</b></td><td>หน้าจอ GUI ค้นหา ดาวน์โหลด แชท และเปิด local server ได้</td><td>คนที่ไม่อยากใช้ command line</td></tr>
+      <tr><td><b>llama.cpp</b></td><td>เบา เร็ว ปรับพารามิเตอร์ได้ละเอียด เป็นแกนของหลายเครื่องมือ</td><td>คนที่ชอบจูนเอง หรือเครื่องสเปกจำกัด</td></tr>
+      <tr><td><b>vLLM</b></td><td>รองรับผู้ใช้พร้อมกันจำนวนมาก throughput สูง</td><td>เซิร์ฟเวอร์ Linux + NVIDIA สำหรับทีม</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- 6 -->
+<section class="slide">
+  <div class="eyebrow">ลงมือ · ขั้นที่ 1</div>
+  <h2>ติดตั้ง Ollama และรันโมเดลแรก</h2>
+  <div class="cols wide-left">
+<pre class="code"><span class="c"># 1) เช็กชื่อการ์ดจอและ VRAM ที่ว่าง</span>
+nvidia-smi
+
+<span class="c"># 2) ติดตั้ง Ollama จาก ollama.com แล้วโหลดโมเดล</span>
+ollama pull llama3.1:8b
+
+<span class="c"># 3) ลองแชทใน terminal</span>
+ollama run llama3.1:8b
+
+<span class="c"># 4) ดูว่าโมเดลอยู่บน GPU หรือไม่</span>
+ollama ps</pre>
+    <div class="notes">
+      <div class="panel">
+        <h3>อ่านผล <code class="inline">ollama ps</code></h3>
+        <p style="font-size:20px;line-height:1.55;color:var(--muted)">คอลัมน์ PROCESSOR ควรเป็น <b style="color:var(--accent)">100% GPU</b> ถ้าเห็นสัดส่วน CPU แปลว่า VRAM ไม่พอ ให้ลองโมเดลที่เล็กลง</p>
+      </div>
+      <div class="note"><b>ภาษาไทย</b><span>ลองหลายตัวแล้วเทียบ เช่น <code class="inline">qwen2.5:7b</code> หรือ <code class="inline">gemma2:9b</code></span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 7 -->
+<section class="slide">
+  <div class="eyebrow">ลงมือ · ขั้นที่ 2</div>
+  <h2>เรียกโมเดลผ่าน API บนเครื่อง</h2>
+  <div class="cols wide-left">
+<pre class="code"><span class="k">import</span> requests
+
+resp = requests.post(<span class="s">"http://localhost:11434/api/chat"</span>, json={
+    <span class="s">"model"</span>: <span class="s">"llama3.1:8b"</span>,
+    <span class="s">"messages"</span>: [
+        {<span class="s">"role"</span>: <span class="s">"system"</span>, <span class="s">"content"</span>: <span class="s">"ตอบเป็นภาษาไทย"</span>},
+        {<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: <span class="s">"สวัสดี แนะนำตัวหน่อย"</span>},
+    ],
+    <span class="s">"stream"</span>: <span class="k">False</span>,
+})
+print(resp.json()[<span class="s">"message"</span>][<span class="s">"content"</span>])</pre>
+    <div class="notes">
+      <div class="note"><b>:11434</b><span>พอร์ตที่ Ollama เปิดรอไว้ ไม่ต้องใช้คีย์</span></div>
+      <div class="note"><b>messages</b><span>รูปแบบเดียวกับ API บนคลาวด์ ประวัติแชทต้องส่งเองทุกรอบเหมือนกัน</span></div>
+<pre class="code sm"><span class="c"># หรือใช้ endpoint แบบ OpenAI-compatible</span>
+<span class="k">from</span> openai <span class="k">import</span> OpenAI
+client = OpenAI(
+    base_url=<span class="s">"http://localhost:11434/v1"</span>,
+    api_key=<span class="s">"ollama"</span>)  <span class="c"># ค่าใดก็ได้</span></pre>
+    </div>
+  </div>
+</section>
+
+<!-- 8 -->
+<section class="slide">
+  <div class="eyebrow">ลงมือ · ขั้นที่ 3</div>
+  <h2>Backend แบบ streaming สำหรับหน้าแชท</h2>
+  <div class="cols wide-left">
+<pre class="code sm"><span class="k">import</span> json, requests
+<span class="k">from</span> fastapi <span class="k">import</span> FastAPI
+<span class="k">from</span> fastapi.responses <span class="k">import</span> StreamingResponse
+<span class="k">from</span> pydantic <span class="k">import</span> BaseModel
+
+app = FastAPI()
+OLLAMA = <span class="s">"http://localhost:11434/api/chat"</span>
+
+<span class="k">class</span> ChatIn(BaseModel):
+    messages: list[dict]
+
+@app.post(<span class="s">"/chat"</span>)
+<span class="k">def</span> chat(body: ChatIn):
+    <span class="k">def</span> gen():
+        payload = {<span class="s">"model"</span>: <span class="s">"llama3.1:8b"</span>,
+                   <span class="s">"messages"</span>: body.messages,
+                   <span class="s">"stream"</span>: <span class="k">True</span>}
+        <span class="k">with</span> requests.post(OLLAMA, json=payload, stream=<span class="k">True</span>) <span class="k">as</span> r:
+            <span class="k">for</span> line <span class="k">in</span> r.iter_lines():     <span class="c"># 1 บรรทัด = 1 JSON</span>
+                <span class="k">if</span> line:
+                    <span class="k">yield</span> json.loads(line)[<span class="s">"message"</span>][<span class="s">"content"</span>]
+    <span class="k">return</span> StreamingResponse(gen(), media_type=<span class="s">"text/plain"</span>)</pre>
+    <div class="notes">
+      <div class="flow">
+        <div class="node"><span class="who">เบราว์เซอร์</span><h3>หน้าแชท</h3></div>
+        <div class="arrow"><svg viewBox="0 0 18 34"><path d="M9 2v22" stroke="var(--muted)" stroke-width="2"/><path d="M3 22l6 10 6-10z" fill="var(--muted)"/></svg></div>
+        <div class="node"><span class="who">:8000</span><h3>FastAPI</h3></div>
+        <div class="arrow"><svg viewBox="0 0 18 34"><path d="M9 2v22" stroke="var(--muted)" stroke-width="2"/><path d="M3 22l6 10 6-10z" fill="var(--muted)"/></svg></div>
+        <div class="node"><span class="who">:11434</span><h3>Ollama</h3></div>
+        <div class="arrow"><svg viewBox="0 0 18 34"><path d="M9 2v22" stroke="var(--accent)" stroke-width="2"/><path d="M3 22l6 10 6-10z" fill="var(--accent)"/></svg></div>
+        <div class="node hot"><span class="who">เครื่องเดียวกัน</span><h3>GPU</h3></div>
+      </div>
+      <ul class="list" style="font-size:19px;gap:10px">
+        <li>Ollama ส่ง stream มาเป็น JSON ทีละบรรทัด เราดึงเฉพาะข้อความส่งต่อ</li>
+        <li>หน้าเว็บใช้โค้ด <code class="inline">fetch</code> + <code class="inline">getReader()</code> ชุดเดียวกับตอนที่ 1 ได้เลย</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 9 -->
+<section class="slide">
+  <div class="eyebrow">ประสิทธิภาพ</div>
+  <h2>ทำให้ตอบเร็วขึ้น (tokens ต่อวินาที)</h2>
+  <div class="grid6">
+    <div class="card"><h3>ให้โมเดลอยู่บน GPU ทั้งตัว</h3><p>ถ้า VRAM ล้น ส่วนที่เหลือจะไปรันบน CPU และช้าลงหลายเท่า</p></div>
+    <div class="card"><h3>ตั้ง context เท่าที่ใช้</h3><p>ค่า <code class="inline">num_ctx</code> ยิ่งยาวยิ่งกิน VRAM ตั้งให้พอดีกับความยาวแชทจริง</p></div>
+    <div class="card"><h3>เริ่มที่ Q4_K_M</h3><p>ถ้าคำตอบยังไม่ดีพอและ VRAM เหลือ ค่อยขยับไป Q5 หรือ Q8</p></div>
+    <div class="card"><h3>ใช้ keep_alive</h3><p>ให้โมเดลค้างอยู่ใน VRAM ระหว่างข้อความ ไม่ต้องโหลดใหม่ทุกครั้ง</p></div>
+    <div class="card"><h3>ปิดโปรแกรมที่ใช้ VRAM</h3><p>เกม โปรแกรมตัดต่อ หรือแท็บวิดีโอ แย่ง VRAM จากโมเดล</p></div>
+    <div class="card"><h3>วัดผลก่อนปรับ</h3><p>รัน <code class="inline">ollama run --verbose</code> แล้วดู eval rate หลังแต่ละคำตอบ</p></div>
+  </div>
+</section>
+
+<!-- 10 -->
+<section class="slide">
+  <div class="eyebrow">สรุป</div>
+  <h2>API Key หรือ GPU ของตัวเอง</h2>
+  <table class="t">
+    <thead><tr><th></th><th>ตอนที่ 1 · API Key</th><th>ตอนที่ 2 · Local GPU</th></tr></thead>
+    <tbody>
+      <tr><td><b>ค่าใช้จ่าย</b></td><td>จ่ายตาม token ที่ใช้</td><td>ซื้อการ์ดจอครั้งเดียว + ค่าไฟ</td></tr>
+      <tr><td><b>ความเก่งของโมเดล</b></td><td>รุ่นแนวหน้า</td><td>ขึ้นกับขนาดที่ VRAM รับไหว</td></tr>
+      <tr><td><b>ความเป็นส่วนตัว</b></td><td>ข้อมูลส่งไปผู้ให้บริการ</td><td>ข้อมูลอยู่ในเครื่อง</td></tr>
+      <tr><td><b>อินเทอร์เน็ต</b></td><td>ต้องมีตลอด</td><td>ไม่จำเป็น</td></tr>
+      <tr><td><b>เริ่มต้น</b></td><td>ขอคีย์แล้วใช้ได้เลย</td><td>ติดตั้งและเลือกโมเดลให้พอดีเครื่อง</td></tr>
+    </tbody>
+  </table>
+  <p style="font-size:21px">หน้าแชทและรูปแบบ <code class="inline">messages</code> ใช้ร่วมกันได้ เปลี่ยนแค่ Backend ว่าจะส่งไปคลาวด์หรือ GPU ในเครื่อง · <a class="next" href="custom-ai-chat-api.html">← กลับไปตอนที่ 1</a></p>
+</section>
+
+</main>
+
+<nav class="ctrl" aria-label="เลื่อนสไลด์">
+  <button id="prev" aria-label="สไลด์ก่อนหน้า">←</button>
+  <span id="count">1 / 10</span>
+  <button id="next" aria-label="สไลด์ถัดไป">→</button>
+  <button id="fs" aria-label="เต็มจอ">⛶</button>
+</nav>
+
+<script>
+(() => {
+  const slides = [...document.querySelectorAll('.slide')];
+  const count = document.getElementById('count');
+  const bar = document.getElementById('bar');
+  const deck = document.title;
+  slides.forEach((s, k) => {
+    const f = document.createElement('div');
+    f.className = 'foot';
+    f.innerHTML = `<span>${deck}</span><span>${String(k + 1).padStart(2, '0')} / ${String(slides.length).padStart(2, '0')}</span>`;
+    if (!s.classList.contains('title-slide')) s.appendChild(f);
+  });
+  let i = 0;
+  function fit() {
+    const pad = innerWidth < 700 ? 0 : 48;
+    const s = Math.min((innerWidth - pad) / 1280, (innerHeight - pad - 40) / 720);
+    document.documentElement.style.setProperty('--scale', Math.max(s, 0.1));
+  }
+  function go(n) {
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach((s, k) => s.classList.toggle('on', k === i));
+    count.textContent = `${i + 1} / ${slides.length}`;
+    bar.style.width = `${((i + 1) / slides.length) * 100}%`;
+    try { history.replaceState(null, '', '#' + (i + 1)); } catch (e) {}
+  }
+  addEventListener('resize', fit);
+  addEventListener('keydown', e => {
+    if (['ArrowRight', 'PageDown', ' ', 'Enter'].includes(e.key)) { e.preventDefault(); go(i + 1); }
+    else if (['ArrowLeft', 'PageUp', 'Backspace'].includes(e.key)) { e.preventDefault(); go(i - 1); }
+    else if (e.key === 'Home') go(0);
+    else if (e.key === 'End') go(slides.length - 1);
+    else if (e.key === 'f' || e.key === 'F') toggleFs();
+  });
+  function toggleFs() {
+    try {
+      if (document.fullscreenElement) document.exitFullscreen();
+      else document.documentElement.requestFullscreen().catch(() => {});
+    } catch (e) {}
+  }
+  document.getElementById('prev').onclick = () => go(i - 1);
+  document.getElementById('next').onclick = () => go(i + 1);
+  document.getElementById('fs').onclick = toggleFs;
+  let x0 = null;
+  addEventListener('touchstart', e => { x0 = e.touches[0].clientX; }, { passive: true });
+  addEventListener('touchend', e => {
+    if (x0 === null) return;
+    const dx = e.changedTouches[0].clientX - x0;
+    if (Math.abs(dx) > 40) go(i + (dx < 0 ? 1 : -1));
+    x0 = null;
+  });
+  fit();
+  go((parseInt(location.hash.slice(1), 10) || 1) - 1);
+})();
+</script>
+</body>
+</html>
