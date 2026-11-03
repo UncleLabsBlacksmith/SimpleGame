@@ -46,7 +46,7 @@ tailwind.config = {
   .slide { @apply absolute inset-0 flex flex-col gap-6 px-20 pt-14 pb-[72px] opacity-0 invisible transition-opacity duration-300 motion-reduce:transition-none; }
   .eyebrow { @apply font-mono text-[15px] font-semibold uppercase tracking-[.14em] text-accent; }
   .heading { @apply font-display text-[44px] font-bold leading-tight mt-2 [text-wrap:balance]; }
-  .code { @apply m-0 rounded-xl bg-code-bg text-code-fg p-6 font-mono text-[17px] leading-[1.5] whitespace-pre overflow-hidden; }
+  .code { @apply m-0 rounded-xl bg-code-bg text-code-fg p-6 font-mono text-[17px] leading-[1.5] whitespace-pre overflow-hidden [font-variant-ligatures:none]; }
   .k { @apply text-[#6cc5ff]; }
   .s { @apply text-[#ffc97a]; }
   .c { @apply text-[#8ba0b8] italic; }
@@ -54,13 +54,15 @@ tailwind.config = {
   .panel-title { @apply font-display text-[23px] font-semibold; }
   .panel-text { @apply text-[19px] leading-normal text-muted; }
   .tag { @apply font-mono text-[15px] font-semibold px-2.5 py-1.5 rounded-md bg-accent-soft text-accent w-fit; }
-  .ic { @apply font-mono text-[.88em] font-semibold bg-accent-soft text-accent px-1.5 py-0.5 rounded; }
+  .ic { @apply font-mono text-[.88em] font-semibold bg-accent-soft text-accent px-1.5 py-0.5 rounded [font-variant-ligatures:none]; }
   .note { @apply grid grid-cols-[170px_1fr] gap-4 items-baseline text-[20px] leading-normal; }
   .note-key { @apply font-mono text-[17px] font-semibold text-accent; }
   .tree-node { @apply absolute -translate-x-1/2 -translate-y-1/2 w-[176px] h-12 grid place-items-center rounded-xl border border-line bg-bg font-mono text-[16px] font-semibold; }
   .mini { @apply h-[124px] rounded-lg bg-paper border border-line p-2 flex gap-1.5; }
   .block { @apply rounded bg-accent; }
   .block-soft { @apply rounded bg-accent-soft border border-accent; }
+  .install-step { @apply grid grid-cols-[40px_1fr] gap-3.5; }
+  .num { @apply w-9 h-9 rounded-full bg-accent text-paper grid place-items-center font-display font-bold text-[17px]; }
   .ctrl-btn { @apply w-9 h-9 rounded-lg border border-line bg-paper text-ink cursor-pointer hover:border-accent hover:text-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent; }
 }
 </style>
@@ -569,6 +571,232 @@ flutter test</pre>
       <div><a class="font-mono text-[20px] font-semibold text-accent underline" href="https://dartpad.dev">dartpad.dev</a><p class="panel-text">ลองเขียน Dart และ Flutter บนเบราว์เซอร์</p></div>
       <div><a class="font-mono text-[20px] font-semibold text-accent underline" href="https://dart.dev">dart.dev</a><p class="panel-text">เอกสารภาษา Dart</p></div>
       <div><a class="font-mono text-[20px] font-semibold text-accent underline" href="https://pub.dev">pub.dev</a><p class="panel-text">ค้นหาแพ็กเกจสำหรับ Dart และ Flutter</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 16 -->
+<section class="slide">
+  <div>
+    <p class="eyebrow">ภาคผนวก: การติดตั้ง</p>
+    <h2 class="heading">ลงพื้นฐาน 3 อย่าง แล้วเพิ่มเฉพาะแพลตฟอร์มที่จะทำ</h2>
+  </div>
+  <div class="rounded-xl bg-accent-soft px-6 py-4 text-[21px] leading-normal"><b>ทุกคนต้องมี:</b> Git, VS Code พร้อมส่วนเสริม Flutter และ Flutter SDK</div>
+  <table class="w-full border-collapse text-[20px] leading-snug">
+    <thead>
+      <tr class="text-left border-b-2 border-ink font-display">
+        <th class="py-2.5 pr-4 w-[16%] font-semibold">เป้าหมาย</th>
+        <th class="py-2.5 pr-4 w-[60%] font-semibold">ต้องลงเพิ่ม</th>
+        <th class="py-2.5 w-[24%] font-semibold">พัฒนาบนเครื่อง</th>
+      </tr>
+    </thead>
+    <tbody class="text-muted">
+      <tr class="border-b border-line"><th class="py-2.5 pr-4 text-left font-semibold text-ink">Web</th><td class="pr-4">Chrome หรือ Edge</td><td>ทุกระบบ</td></tr>
+      <tr class="border-b border-line"><th class="py-2.5 pr-4 text-left font-semibold text-ink">Android</th><td class="pr-4">Android Studio, Android SDK และเครื่องมือเสริม</td><td>Windows, macOS, Linux</td></tr>
+      <tr class="border-b border-line"><th class="py-2.5 pr-4 text-left font-semibold text-ink">iOS</th><td class="pr-4">Xcode และ CocoaPods</td><td>macOS เท่านั้น</td></tr>
+      <tr class="border-b border-line"><th class="py-2.5 pr-4 text-left font-semibold text-ink">macOS</th><td class="pr-4">Xcode และ CocoaPods</td><td>macOS เท่านั้น</td></tr>
+      <tr class="border-b border-line"><th class="py-2.5 pr-4 text-left font-semibold text-ink">Windows</th><td class="pr-4">Visual Studio พร้อม Desktop development with C++</td><td>Windows เท่านั้น</td></tr>
+      <tr class="border-b border-line"><th class="py-2.5 pr-4 text-left font-semibold text-ink">Linux</th><td class="pr-4">clang, CMake, Ninja, pkg-config, GTK 3</td><td>Linux เท่านั้น</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- 17 -->
+<section class="slide">
+  <div>
+    <p class="eyebrow">ภาคผนวก: Flutter SDK</p>
+    <h2 class="heading">วิธีที่แนะนำ: ติดตั้ง Flutter ผ่าน VS Code</h2>
+  </div>
+  <div class="grid grid-cols-[1.2fr_1fr] gap-10 flex-1 min-h-0">
+    <ol class="flex flex-col justify-between text-[20px] leading-snug">
+      <li class="install-step"><span class="num">1</span><span><b>ติดตั้ง Git</b> ตามระบบของคุณ (ดูทางขวา)</span></li>
+      <li class="install-step"><span class="num">2</span><span><b>ติดตั้ง VS Code</b> จาก code.visualstudio.com</span></li>
+      <li class="install-step"><span class="num">3</span><span><b>ลงส่วนเสริม</b> กด <code class="ic">Ctrl+Shift+X</code> ค้นหา Flutter แล้วกด Install ส่วนเสริม Dart จะมาด้วย</span></li>
+      <li class="install-step"><span class="num">4</span><span><b>เริ่มติดตั้ง</b> กด <code class="ic">Ctrl+Shift+P</code> แล้วเลือก <code class="ic">Flutter: New Project</code></span></li>
+      <li class="install-step"><span class="num">5</span><span><b>ดาวน์โหลด SDK</b> กด Download SDK เลือกโฟลเดอร์ แล้วกด Clone Flutter</span></li>
+      <li class="install-step"><span class="num">6</span><span><b>ตั้งค่า PATH</b> กด Add SDK to PATH แล้วปิดและเปิดเทอร์มินัลกับ VS Code ใหม่</span></li>
+    </ol>
+    <div class="flex flex-col gap-4">
+      <h3 class="panel-title">ติดตั้ง Git</h3>
+      <pre class="code text-[16px] p-5"><span class="c"># Windows</span>
+ดาวน์โหลด Git for Windows จาก git-scm.com
+
+<span class="c"># macOS</span>
+xcode-select --install
+
+<span class="c"># Debian, Ubuntu</span>
+sudo apt-get update -y
+sudo apt-get install -y curl git unzip \
+  xz-utils zip libglu1-mesa</pre>
+      <p class="panel-text">บน Mac ใช้ปุ่ม <code class="ic">Cmd</code> แทน <code class="ic">Ctrl</code></p>
+    </div>
+  </div>
+</section>
+
+<!-- 18 -->
+<section class="slide">
+  <div>
+    <p class="eyebrow">ภาคผนวก: Flutter SDK</p>
+    <h2 class="heading">ทางเลือก: ติดตั้ง SDK เองโดยไม่ใช้ VS Code</h2>
+  </div>
+  <div class="grid grid-cols-[1fr_690px] gap-8 flex-1 min-h-0">
+    <ol class="flex flex-col gap-4 text-[20px] leading-snug">
+      <li class="install-step"><span class="num">1</span><span><b>ดาวน์โหลด</b> ไฟล์ stable จาก docs.flutter.dev/install/manual</span></li>
+      <li class="install-step"><span class="num">2</span><span><b>สร้างโฟลเดอร์</b> <code class="ic">develop</code> ในโฟลเดอร์ผู้ใช้ เส้นทางต้องไม่มีช่องว่างหรืออักขระพิเศษ</span></li>
+      <li class="install-step"><span class="num">3</span><span><b>แตกไฟล์</b> ลงโฟลเดอร์นั้น</span></li>
+      <li class="install-step"><span class="num">4</span><span><b>เพิ่ม PATH</b> บน Windows เพิ่ม <code class="ic">%USERPROFILE%\develop\flutter\bin</code> ใน Environment Variables แล้วย้ายขึ้นบนสุด</span></li>
+    </ol>
+    <pre class="code text-[16px] p-5 leading-[1.45]"><span class="c"># Windows (PowerShell) เปลี่ยน X.Y.Z เป็นเวอร์ชันที่โหลดมา</span>
+Expand-Archive `
+  -Path "$HOME\Downloads\flutter_windows_X.Y.Z-stable.zip" `
+  -DestinationPath "$HOME\develop"
+
+<span class="c"># macOS</span>
+unzip ~/Downloads/flutter_macos_X.Y.Z-stable.zip -d ~/develop/
+
+<span class="c"># Linux</span>
+tar -xf ~/Downloads/flutter_linux_X.Y.Z-stable.tar.xz -C ~/develop/
+
+<span class="c"># macOS: เพิ่มใน ~/.zprofile, Linux (bash): เพิ่มใน ~/.bashrc</span>
+export PATH="$HOME/develop/flutter/bin:$PATH"
+
+<span class="c"># เปิดเทอร์มินัลใหม่ แล้วตรวจ</span>
+flutter --version
+dart --version</pre>
+  </div>
+</section>
+
+<!-- 19 -->
+<section class="slide">
+  <div>
+    <p class="eyebrow">ภาคผนวก: Android</p>
+    <h2 class="heading">Android ต้องมี Android Studio และ SDK ครบชุด</h2>
+  </div>
+  <div class="grid grid-cols-[1.25fr_1fr] gap-10 flex-1 min-h-0">
+    <ol class="flex flex-col justify-between text-[20px] leading-snug">
+      <li class="install-step"><span class="num">1</span><span><b>ติดตั้ง Android Studio</b> เวอร์ชัน stable ล่าสุด</span></li>
+      <li class="install-step"><span class="num">2</span><span><b>เปิด SDK Manager</b> จาก More Actions หรือ Tools &gt; SDK Manager</span></li>
+      <li class="install-step"><span class="num">3</span><span><b>แท็บ SDK Platforms</b> เลือกรายการแรกที่เป็น API Level 36 แล้วกด Apply</span></li>
+      <li class="install-step"><span class="num">4</span><span><b>แท็บ SDK Tools</b> เลือกเครื่องมือทั้ง 6 รายการทางขวา แล้วกด Apply</span></li>
+      <li class="install-step"><span class="num">5</span><span><b>ยอมรับใบอนุญาต</b> รัน <code class="ic">flutter doctor --android-licenses</code></span></li>
+      <li class="install-step"><span class="num">6</span><span><b>สร้างเครื่องจำลอง</b> ใน Device Manager กด + เลือกรุ่นและ system image แล้วกด Run</span></li>
+    </ol>
+    <div class="flex flex-col gap-4">
+      <div class="panel">
+        <h3 class="panel-title">SDK Tools ที่ต้องเลือก</h3>
+        <ul class="panel-text list-disc pl-6">
+          <li>Android SDK Build-Tools</li>
+          <li>Android SDK Command-line Tools</li>
+          <li>Android Emulator</li>
+          <li>Android SDK Platform-Tools</li>
+          <li>CMake</li>
+          <li>NDK (Side by side)</li>
+        </ul>
+      </div>
+      <div class="rounded-xl bg-warn-soft p-4 text-[19px] leading-normal"><b class="text-warn">ข้อควรระวัง:</b> ลงแค่ปลั๊กอิน Flutter ใน Android Studio ยังไม่พอ ต้องมี Flutter SDK และตั้งค่า PATH ด้วย</div>
+    </div>
+  </div>
+</section>
+
+<!-- 20 -->
+<section class="slide">
+  <div>
+    <p class="eyebrow">ภาคผนวก: iOS และ macOS</p>
+    <h2 class="heading">iOS และ macOS ต้องใช้เครื่อง Mac กับ Xcode</h2>
+  </div>
+  <div class="grid grid-cols-[1fr_1fr] gap-8 flex-1 min-h-0">
+    <ol class="flex flex-col gap-4 text-[20px] leading-snug">
+      <li class="install-step"><span class="num">1</span><span><b>ติดตั้ง Xcode</b> เวอร์ชันล่าสุด</span></li>
+      <li class="install-step"><span class="num">2</span><span><b>ตั้งค่าและยอมรับใบอนุญาต</b> ด้วยคำสั่งทางขวา</span></li>
+      <li class="install-step"><span class="num">3</span><span><b>ติดตั้ง CocoaPods</b> ตามคู่มือของ CocoaPods จำเป็นสำหรับปลั๊กอินที่มีโค้ด native</span></li>
+      <li class="install-step"><span class="num">4</span><span><b>เฉพาะ iOS:</b> ดาวน์โหลด iOS platform และ simulator</span></li>
+      <li class="install-step"><span class="num">5</span><span><b>เครื่อง iPhone จริง:</b> เปิด Developer Mode และเซ็นแอปด้วยบัญชี Apple (บัญชีฟรีใช้ทดสอบได้)</span></li>
+    </ol>
+    <pre class="code text-[16px] p-5 leading-[1.6]"><span class="c"># เลือก Xcode และตั้งค่าครั้งแรก</span>
+sudo sh -c 'xcode-select -s \
+  /Applications/Xcode.app/Contents/Developer \
+  &amp;&amp; xcodebuild -runFirstLaunch'
+
+<span class="c"># ยอมรับใบอนุญาต</span>
+sudo xcodebuild -license
+
+<span class="c"># เฉพาะ iOS</span>
+xcodebuild -downloadPlatform iOS
+
+<span class="c"># ตรวจผลลัพธ์</span>
+flutter doctor -v
+flutter devices</pre>
+  </div>
+</section>
+
+<!-- 21 -->
+<section class="slide">
+  <div>
+    <p class="eyebrow">ภาคผนวก: Web และเดสก์ท็อป</p>
+    <h2 class="heading">Web ง่ายที่สุด ส่วนเดสก์ท็อปต้องมีเครื่องมือ build</h2>
+  </div>
+  <div class="grid grid-cols-3 gap-5 flex-1 min-h-0">
+    <div class="panel gap-3">
+      <p class="tag">Web</p>
+      <h3 class="panel-title">Chrome หรือ Edge</h3>
+      <p class="panel-text">ติดตั้งเบราว์เซอร์ตัวใดตัวหนึ่งเพื่อรันและดีบัก ไม่ต้องลงอย่างอื่นเพิ่ม</p>
+      <pre class="code text-[16px] p-4 mt-auto">flutter devices
+flutter run -d chrome</pre>
+    </div>
+    <div class="panel gap-3">
+      <p class="tag">Windows</p>
+      <h3 class="panel-title">Visual Studio</h3>
+      <p class="panel-text">ใช้ตัวเต็ม ไม่ใช่ VS Code และต้องเลือก workload <b>Desktop development with C++</b></p>
+      <pre class="code text-[16px] p-4 mt-auto">flutter doctor -v
+flutter devices</pre>
+    </div>
+    <div class="panel gap-3">
+      <p class="tag">Linux</p>
+      <h3 class="panel-title">แพ็กเกจ build</h3>
+      <p class="panel-text">คำสั่งนี้ใช้กับ Debian และ Ubuntu</p>
+      <pre class="code text-[16px] p-4 mt-auto">sudo apt-get update -y
+sudo apt-get install -y \
+  clang cmake ninja-build \
+  pkg-config libgtk-3-dev \
+  libstdc++-12-dev
+flutter doctor -v</pre>
+    </div>
+  </div>
+</section>
+
+<!-- 22 -->
+<section class="slide">
+  <div>
+    <p class="eyebrow">ภาคผนวก: ตรวจผล</p>
+    <h2 class="heading">ใช้ flutter doctor ตรวจว่าติดตั้งครบหรือยัง</h2>
+  </div>
+  <div class="grid grid-cols-[1fr_1fr] gap-8 flex-1 min-h-0">
+    <div class="flex flex-col gap-4">
+      <pre class="code text-[16px] p-5 leading-[1.6]"><span class="c"># ตัวอย่างผลลัพธ์ที่อาจเห็น</span>
+<span class="k">$ flutter doctor</span>
+[✓] Flutter (Channel stable)
+[✓] Windows Version
+[!] Android toolchain
+[✓] Chrome - develop for the web
+[✓] Visual Studio
+[✓] Connected device
+[✓] Network resources</pre>
+      <p class="text-[20px] leading-normal">ต้องมี <b>[✓]</b> แค่ Flutter กับแพลตฟอร์มที่จะทำ ถ้าตัวอื่นขึ้น <b>[!]</b> หรือ <b>[✗]</b> ปล่อยไว้ก่อนได้</p>
+    </div>
+    <div class="flex flex-col gap-4">
+      <h3 class="panel-title">ปัญหาที่พบบ่อย</h3>
+      <div class="panel p-4 gap-1">
+        <p class="font-semibold text-[19px]">ไม่พบคำสั่ง flutter</p>
+        <p class="panel-text text-[18px]">ตรวจ PATH แล้วปิดและเปิดเทอร์มินัลกับเอดิเตอร์ใหม่</p>
+      </div>
+      <div class="panel p-4 gap-1">
+        <p class="font-semibold text-[19px]">ไม่มี flutter.bat ในโฟลเดอร์ bin</p>
+        <p class="panel-text text-[18px]">แอนติไวรัสอาจกักไฟล์ไว้ ให้ตั้งค่าเชื่อถือโฟลเดอร์ SDK แล้วแตกไฟล์ใหม่</p>
+      </div>
+      <div class="panel p-4 gap-1">
+        <p class="font-semibold text-[19px]">Android toolchain ฟ้องเรื่องใบอนุญาต</p>
+        <p class="panel-text text-[18px]">รัน <code class="ic">flutter doctor --android-licenses</code> แล้วตรวจอีกครั้ง</p>
+      </div>
     </div>
   </div>
 </section>
