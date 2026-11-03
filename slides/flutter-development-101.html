@@ -1,0 +1,645 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Flutter Development 101</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Prompt:wght@500;600;700&family=Anuphan:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<script src="https://cdn.tailwindcss.com/3.4.16"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        bg: 'var(--bg)', paper: 'var(--paper)', ink: 'var(--ink)', muted: 'var(--muted)', line: 'var(--line)',
+        accent: 'var(--accent)', 'accent-soft': 'var(--accent-soft)', warn: 'var(--warn)', 'warn-soft': 'var(--warn-soft)',
+        navy: '#07244a', sky: '#54c5f8', 'code-bg': 'var(--code-bg)', 'code-fg': '#dbe7f5',
+      },
+      fontFamily: {
+        display: ['Prompt', 'Leelawadee UI', 'Tahoma', 'system-ui', 'sans-serif'],
+        body: ['Anuphan', 'Leelawadee UI', 'Tahoma', 'system-ui', 'sans-serif'],
+        mono: ['JetBrains Mono', 'Cascadia Code', 'Consolas', 'monospace'],
+      },
+    },
+  },
+};
+</script>
+<style>
+/* Theme tokens: Tailwind colors above read these, so the deck follows light/dark automatically */
+:root {
+  --bg: #e8eef5; --paper: #f8fafc; --ink: #0b2545; --muted: #51637a; --line: #d3dde8;
+  --accent: #0553b1; --accent-soft: #dbe9fb; --warn: #a94f0c; --warn-soft: #fbeadb; --code-bg: #0a1f3c;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #08121f; --paper: #0f1c2e; --ink: #e6eef8; --muted: #9db0c6; --line: #24364d;
+  --accent: #4fb0ff; --accent-soft: #12304f; --warn: #f0a860; --warn-soft: #3a2813; --code-bg: #071525; color-scheme: dark;
+} }
+:root[data-theme="dark"] {
+  --bg: #08121f; --paper: #0f1c2e; --ink: #e6eef8; --muted: #9db0c6; --line: #24364d;
+  --accent: #4fb0ff; --accent-soft: #12304f; --warn: #f0a860; --warn-soft: #3a2813; --code-bg: #071525; color-scheme: dark;
+}
+</style>
+<style type="text/tailwindcss">
+@layer components {
+  .slide { @apply absolute inset-0 flex flex-col gap-6 px-20 pt-14 pb-[72px] opacity-0 invisible transition-opacity duration-300 motion-reduce:transition-none; }
+  .eyebrow { @apply font-mono text-[15px] font-semibold uppercase tracking-[.14em] text-accent; }
+  .heading { @apply font-display text-[44px] font-bold leading-tight mt-2 [text-wrap:balance]; }
+  .code { @apply m-0 rounded-xl bg-code-bg text-code-fg p-6 font-mono text-[17px] leading-[1.5] whitespace-pre overflow-hidden; }
+  .k { @apply text-[#6cc5ff]; }
+  .s { @apply text-[#ffc97a]; }
+  .c { @apply text-[#8ba0b8] italic; }
+  .panel { @apply bg-bg border border-line rounded-2xl p-6 flex flex-col gap-2; }
+  .panel-title { @apply font-display text-[23px] font-semibold; }
+  .panel-text { @apply text-[19px] leading-normal text-muted; }
+  .tag { @apply font-mono text-[15px] font-semibold px-2.5 py-1.5 rounded-md bg-accent-soft text-accent w-fit; }
+  .ic { @apply font-mono text-[.88em] font-semibold bg-accent-soft text-accent px-1.5 py-0.5 rounded; }
+  .note { @apply grid grid-cols-[170px_1fr] gap-4 items-baseline text-[20px] leading-normal; }
+  .note-key { @apply font-mono text-[17px] font-semibold text-accent; }
+  .tree-node { @apply absolute -translate-x-1/2 -translate-y-1/2 w-[176px] h-12 grid place-items-center rounded-xl border border-line bg-bg font-mono text-[16px] font-semibold; }
+  .mini { @apply h-[124px] rounded-lg bg-paper border border-line p-2 flex gap-1.5; }
+  .block { @apply rounded bg-accent; }
+  .block-soft { @apply rounded bg-accent-soft border border-accent; }
+  .ctrl-btn { @apply w-9 h-9 rounded-lg border border-line bg-paper text-ink cursor-pointer hover:border-accent hover:text-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent; }
+}
+</style>
+</head>
+<body class="h-screen m-0 overflow-hidden bg-bg text-ink font-body">
+<div id="bar" class="fixed left-0 top-0 h-1 bg-accent transition-[width] duration-300 z-10"></div>
+<main id="stage" class="fixed left-1/2 top-1/2 w-[1280px] h-[720px] bg-paper shadow-2xl">
+
+<!-- 1 -->
+<section class="slide title-slide !p-0 !flex-row bg-navy text-white" aria-label="Flutter Development 101">
+  <div class="flex-1 flex flex-col justify-center gap-7 pl-20 pr-6">
+    <p class="font-mono text-[15px] font-semibold uppercase tracking-[.14em] text-sky">คอร์สเริ่มต้นสำหรับมือใหม่</p>
+    <h1 class="font-display text-[84px] font-bold leading-[1.05]">Flutter<br>Development 101</h1>
+    <p class="text-[26px] leading-normal text-[#c6d8ec] max-w-[620px]">เขียนโค้ดชุดเดียว<br>แล้วสร้างแอปได้ทั้งมือถือ เว็บ และเดสก์ท็อป</p>
+    <div class="flex flex-wrap gap-2.5 font-mono text-[16px] text-[#c6d8ec]">
+      <span class="px-3.5 py-2 rounded-full border border-[#2c5484]">Android</span>
+      <span class="px-3.5 py-2 rounded-full border border-[#2c5484]">iOS</span>
+      <span class="px-3.5 py-2 rounded-full border border-[#2c5484]">Web</span>
+      <span class="px-3.5 py-2 rounded-full border border-[#2c5484]">Windows</span>
+      <span class="px-3.5 py-2 rounded-full border border-[#2c5484]">macOS</span>
+      <span class="px-3.5 py-2 rounded-full border border-[#2c5484]">Linux</span>
+    </div>
+  </div>
+  <div class="w-[420px] grid place-items-center" aria-hidden="true">
+    <div class="w-[270px] h-[540px] rounded-[38px] border-[10px] border-[#17406f] bg-[#0c3362] p-5 flex flex-col gap-3.5 rotate-3">
+      <div class="h-12 rounded-xl bg-sky"></div>
+      <div class="flex gap-3.5">
+        <div class="flex-1 h-28 rounded-xl bg-[#1f6fc4]"></div>
+        <div class="flex-1 h-28 rounded-xl bg-[#17528f]"></div>
+      </div>
+      <div class="h-14 rounded-xl bg-[#17528f]"></div>
+      <div class="h-14 rounded-xl bg-[#17528f]"></div>
+      <div class="h-14 rounded-xl bg-[#17528f]"></div>
+      <div class="flex-1"></div>
+      <div class="self-end w-14 h-14 rounded-full bg-sky"></div>
+    </div>
+  </div>
+</section>
+
+<!-- 2 -->
+<section class="slide">
+  <div>
+    <p class="eyebrow">รู้จัก Flutter</p>
+    <h2 class="heading">Flutter คือชุดเครื่องมือสร้าง UI จากโค้ดชุดเดียว</h2>
+  </div>
+  <p class="text-[25px] leading-normal text-muted max-w-[1040px]">Flutter เป็นโอเพนซอร์สจาก Google เขียนด้วยภาษา Dart และวาดหน้าจอเองทุกพิกเซล แอปจึงหน้าตาและพฤติกรรมใกล้เคียงกันในทุกแพลตฟอร์ม</p>
+  <div class="grid grid-cols-3 gap-5 flex-1 min-h-0">
+    <div class="panel p-7 gap-3">
+      <p class="tag">Multi-platform</p>
+      <h3 class="panel-title text-[27px]">โค้ดชุดเดียว</h3>
+      <p class="panel-text text-[21px]">ส่วนใหญ่ใช้ร่วมกันได้ทุกแพลตฟอร์ม ส่วนที่ต่างกันจริง ๆ เช่นกล้องหรือการแจ้งเตือน ใช้ปลั๊กอินแทน</p>
+    </div>
+    <div class="panel p-7 gap-3">
+      <p class="tag">Native compile</p>
+      <h3 class="panel-title text-[27px]">ทำงานลื่น</h3>
+      <p class="panel-text text-[21px]">ตอนปล่อยจริงคอมไพล์เป็นโค้ดเครื่องของมือถือและเดสก์ท็อป ส่วนเว็บคอมไพล์เป็น JavaScript หรือ WebAssembly</p>
+    </div>
+    <div class="panel p-7 gap-3">
+      <p class="tag">Hot reload</p>
+      <h3 class="panel-title text-[27px]">เห็นผลทันที</h3>
+      <p class="panel-text text-[21px]">แก้โค้ดแล้วหน้าจอเปลี่ยนในไม่กี่วินาที โดยข้อมูลบนหน้าจอยังอยู่ ไม่ต้องกดย้อนกลับมาทดสอบใหม่</p>
+    </div>
+  </div>
+</section>
+
+<!-- 3 -->
+<section class="slide">
+  <div>
+    <p class="eyebrow">สถาปัตยกรรม</p>
+    <h2 class="heading">Flutter ทำงานเป็นชั้น ๆ และวาดหน้าจอเอง</h2>
+  </div>
+  <div class="grid grid-cols-[1.35fr_1fr] gap-10 flex-1 min-h-0">
+    <div class="flex flex-col gap-2.5">
+      <div class="flex-1 rounded-xl bg-accent text-paper px-6 flex flex-col justify-center">
+        <h3 class="font-display text-[24px] font-semibold">แอปของคุณ</h3>
+        <p class="text-[19px]">โค้ด Dart ที่คุณเขียน</p>
+      </div>
+      <div class="flex-1 rounded-xl bg-accent-soft border border-accent px-6 flex flex-col justify-center">
+        <h3 class="font-display text-[24px] font-semibold">Framework <span class="font-mono text-[16px] text-muted">Dart</span></h3>
+        <p class="text-[19px] text-muted">Material, Cupertino, Widgets, Rendering, Animation</p>
+      </div>
+      <div class="flex-1 rounded-xl bg-bg border border-line px-6 flex flex-col justify-center">
+        <h3 class="font-display text-[24px] font-semibold">Engine <span class="font-mono text-[16px] text-muted">C++</span></h3>
+        <p class="text-[19px] text-muted">ตัววาดกราฟิก (Impeller, Skia), Dart runtime, จัดวางข้อความ</p>
+      </div>
+      <div class="flex-1 rounded-xl bg-bg border border-dashed border-muted px-6 flex flex-col justify-center">
+        <h3 class="font-display text-[24px] font-semibold">Embedder</h3>
+        <p class="text-[19px] text-muted">ตัวเชื่อมกับ Android, iOS, Windows, macOS, Linux</p>
+      </div>
+    </div>
+    <div class="flex flex-col gap-5 justify-center">
+      <div>
+        <h3 class="panel-title">ไม่ได้ใช้ปุ่มของระบบ</h3>
+        <p class="panel-text">ปุ่มและรายการทั้งหมดถูกวาดโดย Flutter เอง จึงควบคุมหน้าตาได้ทุกจุด</p>
+      </div>
+      <div>
+        <h3 class="panel-title">คุยกับระบบผ่านปลั๊กอิน</h3>
+        <p class="panel-text">เซนเซอร์ กล้อง และบริการของเครื่องเรียกผ่าน platform channel</p>
+      </div>
+      <div>
+        <h3 class="panel-title">บนเว็บต่างออกไป</h3>
+        <p class="panel-text">แอปรันในเบราว์เซอร์แทน Embedder ของระบบปฏิบัติการ</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 4 -->
+<section class="slide">
+  <div>
+    <p class="eyebrow">เลือกเครื่องมือ</p>
+    <h2 class="heading">Flutter เหมาะกับงานแบบไหน</h2>
+  </div>
+  <table class="w-full border-collapse text-[20px] leading-snug">
+    <thead>
+      <tr class="text-left border-b-2 border-ink font-display">
+        <th class="py-2.5 pr-4 w-[22%] font-semibold"></th>
+        <th class="py-2.5 pr-4 w-[26%] font-semibold text-accent">Flutter</th>
+        <th class="py-2.5 pr-4 w-[26%] font-semibold">React Native</th>
+        <th class="py-2.5 w-[26%] font-semibold">Native</th>
+      </tr>
+    </thead>
+    <tbody class="text-muted">
+      <tr class="border-b border-line"><th class="py-2.5 pr-4 text-left font-semibold text-ink">ภาษา</th><td class="pr-4">Dart</td><td class="pr-4">JavaScript, TypeScript</td><td>Kotlin, Swift</td></tr>
+      <tr class="border-b border-line"><th class="py-2.5 pr-4 text-left font-semibold text-ink">การวาด UI</th><td class="pr-4">วาดเองด้วย Engine</td><td class="pr-4">ใช้คอมโพเนนต์ของระบบ</td><td>ใช้ UI ของระบบโดยตรง</td></tr>
+      <tr class="border-b border-line"><th class="py-2.5 pr-4 text-left font-semibold text-ink">จำนวนโค้ดเบส</th><td class="pr-4">ชุดเดียว</td><td class="pr-4">ชุดเดียว</td><td>แยกตามแพลตฟอร์ม</td></tr>
+    </tbody>
+  </table>
+  <div class="grid grid-cols-2 gap-5 flex-1 min-h-0">
+    <div class="panel">
+      <h3 class="panel-title text-accent">เหมาะมาก</h3>
+      <ul class="panel-text list-disc pl-6 space-y-1">
+        <li>ทีมเล็กที่ต้องออกทั้ง Android และ iOS</li>
+        <li>แอปที่มีดีไซน์เฉพาะตัวหรือแอนิเมชันเยอะ</li>
+        <li>อยากได้ MVP เร็วบนหลายแพลตฟอร์ม</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h3 class="panel-title text-warn">ควรคิดให้ดีก่อน</h3>
+      <ul class="panel-text list-disc pl-6 space-y-1">
+        <li>แอปที่ผูกกับฟีเจอร์ใหม่ของระบบอย่างลึก</li>
+        <li>เว็บที่ต้องการ SEO และเนื้อหาเป็นหลัก</li>
+        <li>ต้องการขนาดแอปเล็กที่สุดเท่าที่เป็นไปได้</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 5 -->
+<section class="slide">
+  <div>
+    <p class="eyebrow">เริ่มต้น</p>
+    <h2 class="heading">ติดตั้งแล้วรันแอปแรกใน 4 ขั้นตอน</h2>
+  </div>
+  <div class="grid grid-cols-[1.1fr_1fr] gap-10 flex-1 min-h-0">
+    <ol class="flex flex-col gap-5 text-[21px] leading-normal">
+      <li class="grid grid-cols-[44px_1fr] gap-4"><span class="w-10 h-10 rounded-full bg-accent text-paper grid place-items-center font-display font-bold">1</span><span><b>ติดตั้ง Flutter SDK</b> ตามคู่มือที่ docs.flutter.dev (มี Dart มาในตัว)</span></li>
+      <li class="grid grid-cols-[44px_1fr] gap-4"><span class="w-10 h-10 rounded-full bg-accent text-paper grid place-items-center font-display font-bold">2</span><span><b>ติดตั้งเอดิเตอร์</b> VS Code พร้อมส่วนเสริม Flutter หรือ Android Studio</span></li>
+      <li class="grid grid-cols-[44px_1fr] gap-4"><span class="w-10 h-10 rounded-full bg-accent text-paper grid place-items-center font-display font-bold">3</span><span><b>เตรียมเครื่องทดสอบ</b> Android Emulator, Chrome หรือแอปเดสก์ท็อป ส่วน iOS ต้องใช้ Mac กับ Xcode</span></li>
+      <li class="grid grid-cols-[44px_1fr] gap-4"><span class="w-10 h-10 rounded-full bg-accent text-paper grid place-items-center font-display font-bold">4</span><span><b>ตรวจและรัน</b> ด้วยคำสั่งทางขวา ถ้า <code class="ic">flutter doctor</code> ฟ้องอะไร ให้แก้ตามที่แนะนำ</span></li>
+    </ol>
+    <pre class="code text-[19px] leading-[1.7] self-start"><span class="c"># ตรวจว่าเครื่องพร้อมหรือยัง</span>
+flutter doctor
+
+<span class="c"># สร้างโปรเจกต์ใหม่</span>
+flutter create hello_app
+cd hello_app
+
+<span class="c"># ดูเครื่องที่ใช้ได้ แล้วรัน</span>
+flutter devices
+flutter run</pre>
+  </div>
+</section>
+
+<!-- 6 -->
+<section class="slide">
+  <div>
+    <p class="eyebrow">โครงสร้างโปรเจกต์</p>
+    <h2 class="heading">ไฟล์ส่วนใหญ่ที่คุณแก้จะอยู่ใน lib/</h2>
+  </div>
+  <div class="grid grid-cols-[1fr_1.3fr] gap-10 flex-1 min-h-0">
+    <pre class="code text-[19px] leading-[1.65] self-start">hello_app/
+├─ <span class="k">lib/</span>
+│  └─ <span class="k">main.dart</span>
+├─ test/
+│  └─ widget_test.dart
+├─ <span class="s">pubspec.yaml</span>
+├─ analysis_options.yaml
+├─ android/
+├─ ios/
+├─ web/
+└─ windows/  macos/  linux/</pre>
+    <div class="flex flex-col gap-5 justify-center">
+      <div class="note"><span class="note-key">lib/main.dart</span><span>จุดเริ่มต้นของแอป โค้ด Dart ทั้งหมดอยู่ในโฟลเดอร์ <code class="ic">lib/</code></span></div>
+      <div class="note"><span class="note-key">pubspec.yaml</span><span>ชื่อแอป เวอร์ชัน แพ็กเกจที่ใช้ รูปภาพ และฟอนต์</span></div>
+      <div class="note"><span class="note-key">test/</span><span>เทสต์ รันด้วย <code class="ic">flutter test</code></span></div>
+      <div class="note"><span class="note-key">analysis_options</span><span>กฎตรวจคุณภาพโค้ด ใช้กับ <code class="ic">flutter analyze</code></span></div>
+      <div class="note"><span class="note-key">android/ ios/ ...</span><span>โปรเจกต์ของแต่ละแพลตฟอร์ม แก้เมื่อต้องตั้งค่าไอคอน สิทธิ์ หรือการเซ็นแอป</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 7 -->
+<section class="slide">
+  <div>
+    <p class="eyebrow">ภาษา Dart</p>
+    <h2 class="heading">Dart อ่านง่าย ถ้าเคยเขียน Java หรือ JS</h2>
+  </div>
+  <div class="grid grid-cols-[1.25fr_1fr] gap-10 flex-1 min-h-0">
+    <pre class="code"><span class="c">// ตัวแปร: var เปลี่ยนได้, final กำหนดครั้งเดียว</span>
+<span class="k">var</span> count = 0;
+<span class="k">final</span> name = <span class="s">'Somchai'</span>;
+<span class="k">const</span> pi = 3.14;
+
+<span class="c">// Null safety: ? แปลว่าเป็น null ได้</span>
+<span class="k">String</span>? nickname;
+print(nickname ?? <span class="s">'ไม่มีชื่อเล่น'</span>);
+
+<span class="c">// งานที่ต้องรอ เช่น เรียก API</span>
+<span class="k">Future</span>&lt;<span class="k">String</span>&gt; load() <span class="k">async</span> {
+  <span class="k">await</span> <span class="k">Future</span>.delayed(<span class="k">const</span> Duration(seconds: 1));
+  <span class="k">return</span> <span class="s">'เสร็จแล้ว'</span>;
+}</pre>
+    <div class="flex flex-col gap-5 justify-center">
+      <div>
+        <h3 class="panel-title">final กับ const</h3>
+        <p class="panel-text"><code class="ic">final</code> รู้ค่าตอนรันได้ ส่วน <code class="ic">const</code> ต้องรู้ค่าตั้งแต่ตอนคอมไพล์</p>
+      </div>
+      <div>
+        <h3 class="panel-title">Null safety</h3>
+        <p class="panel-text">ตัวแปรเป็น null ไม่ได้ ถ้าไม่ได้ใส่ <code class="ic">?</code> ข้อผิดพลาดจึงเจอตั้งแต่ตอนเขียน</p>
+      </div>
+      <div>
+        <h3 class="panel-title">async กับ await</h3>
+        <p class="panel-text">รอผลลัพธ์ได้โดยที่หน้าจอไม่ค้าง ใช้บ่อยมากกับเครือข่ายและไฟล์</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 8 -->
+<section class="slide">
+  <div>
+    <p class="eyebrow">แนวคิดหลัก</p>
+    <h2 class="heading">ทุกอย่างบนหน้าจอคือ Widget ที่ซ้อนกันเป็นต้นไม้</h2>
+  </div>
+  <div class="grid grid-cols-[680px_1fr] gap-10 flex-1 min-h-0">
+    <div class="relative w-[680px] h-[440px]" role="img" aria-label="ต้นไม้ Widget: MaterialApp มี Scaffold เป็นลูก Scaffold มี AppBar และ Center AppBar มี Text Center มี Column และ Column มี Text กับ ElevatedButton">
+      <svg class="absolute inset-0 text-muted" width="680" height="440" viewBox="0 0 680 440" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path d="M340 30V122M340 122L170 214M340 122L480 214M170 214V306M480 214V306M480 306L360 398M480 306L580 398"/>
+      </svg>
+      <div class="tree-node !bg-accent !text-paper !border-accent left-[340px] top-[30px]">MaterialApp</div>
+      <div class="tree-node left-[340px] top-[122px]">Scaffold</div>
+      <div class="tree-node left-[170px] top-[214px]">AppBar</div>
+      <div class="tree-node left-[480px] top-[214px]">Center</div>
+      <div class="tree-node left-[170px] top-[306px]">Text</div>
+      <div class="tree-node left-[480px] top-[306px]">Column</div>
+      <div class="tree-node left-[360px] top-[398px]">Text</div>
+      <div class="tree-node left-[580px] top-[398px]">ElevatedButton</div>
+    </div>
+    <div class="flex flex-col gap-5 justify-center">
+      <div>
+        <h3 class="panel-title">Widget คือคำอธิบาย UI</h3>
+        <p class="panel-text">บอกว่าหน้าจอควรเป็นอย่างไร แล้ว Flutter จะจัดการวาดให้</p>
+      </div>
+      <div>
+        <h3 class="panel-title">ประกอบจากชิ้นเล็ก</h3>
+        <p class="panel-text">แม้แต่ระยะห่างและการจัดกึ่งกลางก็เป็น Widget เช่น <code class="ic">Padding</code> และ <code class="ic">Center</code></p>
+      </div>
+      <div>
+        <h3 class="panel-title">อยากเปลี่ยนจอ แค่เปลี่ยนข้อมูล</h3>
+        <p class="panel-text">เมื่อข้อมูลเปลี่ยน Flutter สร้าง Widget ใหม่และวาดเฉพาะส่วนที่ต่าง</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 9 -->
+<section class="slide">
+  <div>
+    <p class="eyebrow">แอปแรก</p>
+    <h2 class="heading">แอปแรกใช้โค้ดไม่ถึง 20 บรรทัด</h2>
+  </div>
+  <div class="grid grid-cols-[1fr_250px] gap-10 flex-1 min-h-0">
+    <pre class="code"><span class="k">import</span> <span class="s">'package:flutter/material.dart'</span>;
+
+<span class="k">void</span> main() =&gt; runApp(<span class="k">const</span> MyApp());
+
+<span class="k">class</span> MyApp <span class="k">extends</span> StatelessWidget {
+  <span class="k">const</span> MyApp({<span class="k">super</span>.key});
+
+  <span class="k">@override</span>
+  Widget build(BuildContext context) {
+    <span class="k">return</span> MaterialApp(
+      home: Scaffold(
+        appBar: AppBar(title: <span class="k">const</span> Text(<span class="s">'Hello'</span>)),
+        body: <span class="k">const</span> Center(child: Text(<span class="s">'สวัสดี Flutter'</span>)),
+      ),
+    );
+  }
+}</pre>
+    <div class="rounded-[28px] border-[8px] border-ink bg-paper overflow-hidden flex flex-col h-[440px]" role="img" aria-label="ตัวอย่างผลลัพธ์: แถบด้านบนเขียนว่า Hello และกลางจอเขียนว่า สวัสดี Flutter">
+      <div class="h-16 bg-accent-soft flex items-center px-4 font-display text-[22px] text-ink">Hello</div>
+      <div class="flex-1 grid place-items-center text-[20px] text-ink">สวัสดี Flutter</div>
+    </div>
+  </div>
+</section>
+
+<!-- 10 -->
+<section class="slide">
+  <div>
+    <p class="eyebrow">Layout</p>
+    <h2 class="heading">จัดหน้าจอด้วย 6 Widget ที่ใช้บ่อยที่สุด</h2>
+  </div>
+  <div class="grid grid-cols-3 gap-4 flex-1 min-h-0">
+    <div class="panel p-4 gap-1.5">
+      <div class="mini flex-col" aria-hidden="true"><div class="block flex-1"></div><div class="block flex-1"></div><div class="block flex-1"></div></div>
+      <h3 class="panel-title font-mono text-[20px]">Column</h3>
+      <p class="panel-text text-[18px]">เรียงลูกจากบนลงล่าง</p>
+    </div>
+    <div class="panel p-4 gap-1.5">
+      <div class="mini" aria-hidden="true"><div class="block flex-1"></div><div class="block flex-1"></div><div class="block flex-1"></div></div>
+      <h3 class="panel-title font-mono text-[20px]">Row</h3>
+      <p class="panel-text text-[18px]">เรียงลูกจากซ้ายไปขวา</p>
+    </div>
+    <div class="panel p-4 gap-1.5">
+      <div class="mini relative" aria-hidden="true"><div class="block-soft absolute left-2 top-2 w-3/5 h-[70%]"></div><div class="block absolute right-6 bottom-2 w-1/2 h-1/2"></div></div>
+      <h3 class="panel-title font-mono text-[20px]">Stack</h3>
+      <p class="panel-text text-[18px]">วางซ้อนกัน เช่น ข้อความบนรูป</p>
+    </div>
+    <div class="panel p-4 gap-1.5">
+      <div class="mini" aria-hidden="true"><div class="block-soft w-10"></div><div class="block flex-1"></div><div class="block-soft w-10"></div></div>
+      <h3 class="panel-title font-mono text-[20px]">Expanded</h3>
+      <p class="panel-text text-[18px]">ขยายลูกให้เต็มพื้นที่ที่เหลือ</p>
+    </div>
+    <div class="panel p-4 gap-1.5">
+      <div class="mini !p-0 bg-accent-soft" aria-hidden="true"><div class="block flex-1 m-4"></div></div>
+      <h3 class="panel-title font-mono text-[20px]">Padding</h3>
+      <p class="panel-text text-[18px]">เพิ่มระยะห่างรอบ Widget ลูก</p>
+    </div>
+    <div class="panel p-4 gap-1.5">
+      <div class="mini flex-col overflow-hidden" aria-hidden="true"><div class="block h-8 shrink-0"></div><div class="block h-8 shrink-0"></div><div class="block h-8 shrink-0"></div><div class="block h-8 shrink-0"></div></div>
+      <h3 class="panel-title font-mono text-[20px]">ListView</h3>
+      <p class="panel-text text-[18px]">รายการที่เลื่อนดูได้</p>
+    </div>
+  </div>
+</section>
+
+<!-- 11 -->
+<section class="slide">
+  <div>
+    <p class="eyebrow">State</p>
+    <h2 class="heading">เมื่อข้อมูลเปลี่ยน ให้เรียก setState แล้วหน้าจอจะอัปเดต</h2>
+  </div>
+  <div class="grid grid-cols-[1.35fr_1fr] gap-10 flex-1 min-h-0">
+    <pre class="code"><span class="k">class</span> Counter <span class="k">extends</span> StatefulWidget {
+  <span class="k">const</span> Counter({<span class="k">super</span>.key});
+  <span class="k">@override</span>
+  State&lt;Counter&gt; createState() =&gt; _CounterState();
+}
+
+<span class="k">class</span> _CounterState <span class="k">extends</span> State&lt;Counter&gt; {
+  <span class="k">int</span> count = 0;
+
+  <span class="k">@override</span>
+  Widget build(BuildContext context) {
+    <span class="k">return</span> TextButton(
+      onPressed: () =&gt; setState(() =&gt; count++),
+      child: Text(<span class="s">'กดแล้ว $count ครั้ง'</span>),
+    );
+  }
+}</pre>
+    <div class="flex flex-col gap-4 justify-center">
+      <div class="panel">
+        <p class="tag">StatelessWidget</p>
+        <p class="panel-text">แสดงผลจากค่าที่ส่งเข้ามาเท่านั้น ไม่เก็บข้อมูลที่เปลี่ยนแปลงเอง</p>
+      </div>
+      <div class="panel">
+        <p class="tag">StatefulWidget</p>
+        <p class="panel-text">เก็บข้อมูลที่เปลี่ยนได้ใน State และสร้าง UI ใหม่เมื่อเรียก <code class="ic">setState</code></p>
+      </div>
+      <p class="panel-text">เมื่อแอปใหญ่ขึ้น ค่อยขยับไปใช้ Provider, Riverpod หรือ BLoC</p>
+    </div>
+  </div>
+</section>
+
+<!-- 12 -->
+<section class="slide">
+  <div>
+    <p class="eyebrow">Dev loop</p>
+    <h2 class="heading">เลือกวิธีรีเฟรชให้ตรงกับสิ่งที่แก้</h2>
+  </div>
+  <div class="grid grid-cols-3 gap-5 flex-1 min-h-0">
+    <div class="panel p-7 gap-3 justify-center border-accent border-2">
+      <p class="font-mono text-[40px] font-semibold text-accent leading-none">r</p>
+      <h3 class="panel-title text-[27px]">Hot reload</h3>
+      <p class="panel-text text-[21px]">แก้ UI หรือเนื้อฟังก์ชัน</p>
+      <p class="text-[21px] font-semibold">เร็วที่สุด และ state ยังอยู่</p>
+    </div>
+    <div class="panel p-7 gap-3 justify-center">
+      <p class="font-mono text-[40px] font-semibold text-ink leading-none">R</p>
+      <h3 class="panel-title text-[27px]">Hot restart</h3>
+      <p class="panel-text text-[21px]">แก้ <code class="ic">main()</code>, <code class="ic">initState</code> หรือค่าเริ่มต้น</p>
+      <p class="text-[21px] font-semibold">เร็ว แต่ state เริ่มใหม่</p>
+    </div>
+    <div class="panel p-7 gap-3 justify-center">
+      <p class="font-mono text-[40px] font-semibold text-ink leading-none">q → run</p>
+      <h3 class="panel-title text-[27px]">รันใหม่ทั้งหมด</h3>
+      <p class="panel-text text-[21px]">แก้โค้ด native หรือเพิ่มปลั๊กอิน</p>
+      <p class="text-[21px] font-semibold">ช้าสุด เพราะต้องสร้างแอปใหม่</p>
+    </div>
+  </div>
+  <div class="rounded-xl bg-accent-soft p-5 text-[21px] leading-normal">
+    ปุ่ม <code class="ic !bg-paper">r</code> <code class="ic !bg-paper">R</code> <code class="ic !bg-paper">q</code> ใช้ในเทอร์มินัลที่รัน <code class="ic !bg-paper">flutter run</code> ส่วน VS Code จะ hot reload ให้อัตโนมัติเมื่อบันทึกไฟล์
+  </div>
+</section>
+
+<!-- 13 -->
+<section class="slide">
+  <div>
+    <p class="eyebrow">เปลี่ยนหน้าและใช้แพ็กเกจ</p>
+    <h2 class="heading">แอปจริงต้องมีหลายหน้าและดึงข้อมูลจากภายนอก</h2>
+  </div>
+  <div class="grid grid-cols-[1.45fr_1fr] gap-10 flex-1 min-h-0">
+    <pre class="code"><span class="c">// ไปหน้าถัดไป และกลับมา</span>
+Navigator.of(context).push(
+  MaterialPageRoute(builder: (_) =&gt; <span class="k">const</span> DetailPage()),
+);
+Navigator.of(context).pop();
+
+<span class="c">// เพิ่มแพ็กเกจ: flutter pub add http</span>
+<span class="k">import</span> <span class="s">'dart:convert'</span>;
+<span class="k">import</span> <span class="s">'package:http/http.dart'</span> <span class="k">as</span> http;
+
+<span class="k">Future</span>&lt;<span class="k">dynamic</span>&gt; fetchUser() <span class="k">async</span> {
+  <span class="k">final</span> res = <span class="k">await</span> http.get(
+    Uri.parse(<span class="s">'https://api.example.com/user'</span>),
+  );
+  <span class="k">return</span> jsonDecode(res.body);
+}</pre>
+    <div class="flex flex-col gap-4 justify-center">
+      <h3 class="panel-title">แพ็กเกจที่เจอบ่อยบน pub.dev</h3>
+      <div class="note !grid-cols-[195px_1fr]"><span class="note-key">http, dio</span><span>เรียก API</span></div>
+      <div class="note !grid-cols-[195px_1fr]"><span class="note-key">go_router</span><span>จัดการเส้นทางหน้าแอป</span></div>
+      <div class="note !grid-cols-[195px_1fr]"><span class="note-key">provider</span><span>แชร์ state ข้ามหน้า</span></div>
+      <div class="note !grid-cols-[195px_1fr]"><span class="note-key">shared_preferences</span><span>เก็บค่าเล็ก ๆ ในเครื่อง</span></div>
+      <p class="panel-text">ใช้ <code class="ic">FutureBuilder</code> เพื่อแสดงสถานะโหลด สำเร็จ หรือผิดพลาดบนหน้าจอ</p>
+    </div>
+  </div>
+</section>
+
+<!-- 14 -->
+<section class="slide">
+  <div>
+    <p class="eyebrow">ส่งมอบ</p>
+    <h2 class="heading">ตรวจโค้ดให้ผ่าน แล้วค่อย build สำหรับแต่ละแพลตฟอร์ม</h2>
+  </div>
+  <div class="grid grid-cols-[1fr_1.45fr] gap-10 flex-1 min-h-0">
+    <div class="flex flex-col gap-4">
+      <h3 class="panel-title">ก่อนปล่อยทุกครั้ง</h3>
+      <pre class="code text-[19px] leading-[1.7]">flutter analyze
+flutter test</pre>
+      <div class="rounded-xl bg-warn-soft p-5 text-[20px] leading-normal">
+        <b class="text-warn">อย่าลืม:</b> ทดสอบบนเครื่องจริงด้วย <code class="ic">flutter run --release</code> เพราะโหมด debug ช้ากว่าของจริงมาก
+      </div>
+    </div>
+    <table class="w-full border-collapse text-[20px] self-start">
+      <thead>
+        <tr class="text-left border-b-2 border-ink font-display">
+          <th class="py-4 pr-4 w-[50%] font-semibold">คำสั่ง</th>
+          <th class="py-4 font-semibold">ได้อะไร</th>
+        </tr>
+      </thead>
+      <tbody class="text-muted">
+        <tr class="border-b border-line"><td class="py-4 pr-4 font-mono text-[18px] text-ink">flutter build appbundle</td><td>.aab สำหรับ Google Play</td></tr>
+        <tr class="border-b border-line"><td class="py-4 pr-4 font-mono text-[18px] text-ink">flutter build apk</td><td>.apk สำหรับติดตั้งตรง</td></tr>
+        <tr class="border-b border-line"><td class="py-4 pr-4 font-mono text-[18px] text-ink">flutter build ipa</td><td>แพ็กเกจ App Store (ต้องใช้ Mac)</td></tr>
+        <tr class="border-b border-line"><td class="py-4 pr-4 font-mono text-[18px] text-ink">flutter build web</td><td>ไฟล์เว็บใน build/web</td></tr>
+        <tr class="border-b border-line"><td class="py-4 pr-4 font-mono text-[18px] text-ink">flutter build windows</td><td>แอป Windows (build บน Windows)</td></tr>
+        <tr class="border-b border-line"><td class="py-4 pr-4 font-mono text-[18px] text-ink">flutter build macos | linux</td><td>build บนระบบนั้น ๆ</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- 15 -->
+<section class="slide">
+  <div>
+    <p class="eyebrow">ขั้นต่อไป</p>
+    <h2 class="heading">ลองทำแอป To-do เพื่อใช้ทุกอย่างที่เรียนมา</h2>
+  </div>
+  <div class="grid grid-cols-[1.2fr_1fr] gap-10 flex-1 min-h-0">
+    <div class="panel p-7 gap-4">
+      <p class="tag">แบบฝึกหัด</p>
+      <ol class="flex flex-col gap-4 text-[22px] leading-normal list-decimal pl-7">
+        <li>แสดงรายการงานด้วย <code class="ic">ListView</code></li>
+        <li>เพิ่มงานจาก <code class="ic">TextField</code> แล้วอัปเดตด้วย <code class="ic">setState</code></li>
+        <li>แตะรายการเพื่อเปิดหน้ารายละเอียดด้วย <code class="ic">Navigator</code></li>
+        <li>บันทึกงานด้วย <code class="ic">shared_preferences</code> เพื่อให้เปิดแอปใหม่แล้วข้อมูลยังอยู่</li>
+        <li>เขียนเทสต์หนึ่งตัว แล้วลอง build ขึ้นเครื่องจริง</li>
+      </ol>
+    </div>
+    <div class="flex flex-col gap-5 justify-center">
+      <h3 class="panel-title">แหล่งเรียนรู้ต่อ</h3>
+      <div><a class="font-mono text-[20px] font-semibold text-accent underline" href="https://docs.flutter.dev">docs.flutter.dev</a><p class="panel-text">คู่มือการติดตั้งและบทเรียนทางการ</p></div>
+      <div><a class="font-mono text-[20px] font-semibold text-accent underline" href="https://dartpad.dev">dartpad.dev</a><p class="panel-text">ลองเขียน Dart และ Flutter บนเบราว์เซอร์</p></div>
+      <div><a class="font-mono text-[20px] font-semibold text-accent underline" href="https://dart.dev">dart.dev</a><p class="panel-text">เอกสารภาษา Dart</p></div>
+      <div><a class="font-mono text-[20px] font-semibold text-accent underline" href="https://pub.dev">pub.dev</a><p class="panel-text">ค้นหาแพ็กเกจสำหรับ Dart และ Flutter</p></div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<nav class="fixed right-4 bottom-3.5 flex items-center gap-2 font-mono text-[13px] font-medium text-muted z-10" aria-label="ควบคุมสไลด์">
+  <button id="prev" class="ctrl-btn" aria-label="สไลด์ก่อนหน้า">←</button>
+  <span id="count"></span>
+  <button id="next" class="ctrl-btn" aria-label="สไลด์ถัดไป">→</button>
+  <button id="fs" class="ctrl-btn" aria-label="เต็มจอ">⛶</button>
+</nav>
+
+<script>
+(() => {
+  const slides = [...document.querySelectorAll('.slide')];
+  const stage = document.getElementById('stage');
+  const count = document.getElementById('count');
+  const bar = document.getElementById('bar');
+  const deck = document.title;
+  slides.forEach((s, k) => {
+    if (s.classList.contains('title-slide')) return;
+    const f = document.createElement('div');
+    f.className = 'absolute left-20 right-20 bottom-5 flex justify-between font-mono text-sm text-muted border-t border-line pt-2.5';
+    f.innerHTML = `<span>${deck}</span><span>${String(k + 1).padStart(2, '0')} / ${String(slides.length).padStart(2, '0')}</span>`;
+    s.appendChild(f);
+  });
+  let i = 0;
+  function fit() {
+    const pad = innerWidth < 700 ? 0 : 48;
+    const s = Math.max(Math.min((innerWidth - pad) / 1280, (innerHeight - pad - 40) / 720), 0.1);
+    stage.style.transform = `translate(-50%, -50%) scale(${s})`;
+  }
+  function go(n) {
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach((s, k) => {
+      s.classList.toggle('!opacity-100', k === i);
+      s.classList.toggle('!visible', k === i);
+    });
+    count.textContent = `${i + 1} / ${slides.length}`;
+    bar.style.width = `${((i + 1) / slides.length) * 100}%`;
+    try { history.replaceState(null, '', '#' + (i + 1)); } catch (e) {}
+  }
+  addEventListener('resize', fit);
+  addEventListener('keydown', e => {
+    if (['ArrowRight', 'PageDown', ' ', 'Enter'].includes(e.key)) { e.preventDefault(); go(i + 1); }
+    else if (['ArrowLeft', 'PageUp', 'Backspace'].includes(e.key)) { e.preventDefault(); go(i - 1); }
+    else if (e.key === 'Home') go(0);
+    else if (e.key === 'End') go(slides.length - 1);
+    else if (e.key === 'f' || e.key === 'F') toggleFs();
+  });
+  function toggleFs() {
+    try {
+      if (document.fullscreenElement) document.exitFullscreen();
+      else document.documentElement.requestFullscreen().catch(() => {});
+    } catch (e) {}
+  }
+  document.getElementById('prev').onclick = () => go(i - 1);
+  document.getElementById('next').onclick = () => go(i + 1);
+  document.getElementById('fs').onclick = toggleFs;
+  let x0 = null;
+  addEventListener('touchstart', e => { x0 = e.touches[0].clientX; }, { passive: true });
+  addEventListener('touchend', e => {
+    if (x0 === null) return;
+    const dx = e.changedTouches[0].clientX - x0;
+    if (Math.abs(dx) > 40) go(i + (dx < 0 ? 1 : -1));
+    x0 = null;
+  });
+  fit();
+  go((parseInt(location.hash.slice(1), 10) || 1) - 1);
+})();
+</script>
+</body>
+</html>
